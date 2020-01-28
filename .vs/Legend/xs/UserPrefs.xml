@@ -1,0 +1,26 @@
+﻿<Properties StartupConfiguration="{A51BC10E-D3E9-4793-B132-B50AD92C6EBF}|Default">
+  <MonoDevelop.Ide.ItemProperties.Legend.Admin PreferredExecutionTarget="/Applications/Google Chrome.app" />
+  <MonoDevelop.Ide.Workbench>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Legend" expanded="True" selected="True" />
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.Legend.Identity PreferredExecutionTarget="/Applications/Google Chrome.app" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations>
+    <MultiItemSolutionRunConfiguration Id="Multiple Projects" Name="Multiple Projects">
+      <Items>
+        <StartupItem ItemId="{63371A3F-2094-4CC4-9FD6-5D7A3C7AC136}" ItemName="Legend.Admin" ConfigurationId="Default" />
+        <StartupItem ItemId="{A51BC10E-D3E9-4793-B132-B50AD92C6EBF}" ItemName="Legend.Identity" ConfigurationId="Default" />
+      </Items>
+    </MultiItemSolutionRunConfiguration>
+  </MultiItemStartupConfigurations>
+</Properties>
