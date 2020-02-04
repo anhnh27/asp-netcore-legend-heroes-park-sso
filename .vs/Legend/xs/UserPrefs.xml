@@ -1,0 +1,33 @@
+﻿<Properties StartupConfiguration="{A51BC10E-D3E9-4793-B132-B50AD92C6EBF}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Legend.Identity/Views/Account/Login.cshtml">
+    <Files>
+      <File FileName="Legend.Identity/Views/Account/Login.cshtml" Line="190" Column="27" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Legend" expanded="True" selected="True">
+            <Node name="Legend.Identity" expanded="True">
+              <Node name="Views" expanded="True">
+                <Node name="Account" expanded="True" />
+              </Node>
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.Legend.Identity PreferredExecutionTarget="/Applications/Google Chrome.app" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations>
+    <MultiItemSolutionRunConfiguration Id="Multiple Projects" Name="Multiple Projects">
+      <Items>
+        <StartupItem ItemId="{A51BC10E-D3E9-4793-B132-B50AD92C6EBF}" ItemName="Legend.Identity" ConfigurationId="Default" />
+      </Items>
+    </MultiItemSolutionRunConfiguration>
+  </MultiItemStartupConfigurations>
+</Properties>
