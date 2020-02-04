@@ -6,10 +6,12 @@
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
-          <Node name="Legend" expanded="True" selected="True">
+          <Node name="Legend" expanded="True">
             <Node name="Legend.Identity" expanded="True">
               <Node name="Views" expanded="True">
-                <Node name="Account" expanded="True" />
+                <Node name="Account" expanded="True">
+                  <Node name="Login.cshtml" selected="True" />
+                </Node>
               </Node>
             </Node>
           </Node>
