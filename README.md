@@ -4,4 +4,4 @@
 ## Legend.Admin
 - admin portal for admin to create staff.
 ## Legend.API
--api protected by identity server & provide api for both web and mobile client.
+- api protected by identity server & provide api for both web and mobile client.
