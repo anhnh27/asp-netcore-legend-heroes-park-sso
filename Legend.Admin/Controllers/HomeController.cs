@@ -15,6 +15,7 @@ namespace Legend.Admin.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
