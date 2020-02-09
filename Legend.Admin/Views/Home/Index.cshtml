@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authentication
+@model IEnumerable<Legend.Admin.Models.UserViewModel>
 
 @if (User.Identity.IsAuthenticated)
 {
@@ -30,51 +31,24 @@
     <table cellspacing="0">
         <tr>
             <th>Picture</th>
-            <th>Name</th>
             <th>Email</th>
-            <th>Phone</th>
             <th>Actions</th>
         </tr>
 
-        <tr class="row-item">
-            <td><img src="http://lorempixel.com/100/100/people/1" alt="" /></td>
-            <td>Jane Doe</td>
-            <td>jane.doe@foo.com</td>
-            <td>01 800 2000</td>
-            <td>
-                <button class="btn-danger">Deactive</button>
-            </td>
-        </tr>
-
-        <tr class="row-item">
-            <td><img src="http://lorempixel.com/100/100/sports/2" alt="" /></td>
-            <td>John Doe</td>
-            <td>john.doe@foo.com</td>
-            <td>01 800 2000</td>
-            <td>
-                <button class="btn-danger">Deactive</button>
-            </td>
-        </tr>
-
-        <tr class="row-item">
-            <td><img src="http://lorempixel.com/100/100/people/9" alt="" /></td>
-            <td>Jane Smith</td>
-            <td>jane.smith@foo.com</td>
-            <td>01 800 2000</td>
-            <td>
-                <button class="btn-danger">Deactive</button>
-            </td>
-        </tr>
-
-        <tr class="row-item">
-            <td><img src="http://lorempixel.com/100/100/people/3" alt="" /></td>
-            <td>John Smith</td>
-            <td>john.smith@foo.com</td>
-            <td>01 800 2000</td>
-            <td>
-                <button class="btn-danger">Deactive</button>
-            </td>
-        </tr>
+        @foreach (var user in Model)
+        {
+            <tr class="row-item">
+                <td><img src="@user.Photo" alt="" /></td>
+                <td>@user.Email</td>
+                <td>
+                    @using (Html.BeginForm("Deactive", "Home", new { userId = @user.UserId }, FormMethod.Post))
+                    { 
+                        <input type="hidden" id="userId" value="@user.UserId" />
+                        <button class="btn-danger" type="submit">Deactive</button>
+                    }
+                </td>
+            </tr>
+        }
     </table>
     <div class="content_detail__pagination cdp" actpage="1">
         <a href="#!-1" class="cdp_i">prev</a>

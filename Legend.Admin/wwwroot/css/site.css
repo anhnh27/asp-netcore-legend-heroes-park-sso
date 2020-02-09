@@ -96,7 +96,7 @@ img {
     max-width: calc(100% - 2em);
     margin: 1em auto;
     overflow: hidden;
-    width: 800px;
+    width: 100%;
     border-top-width: 0 !important;
     border-bottom-width: 0 !important;
 }

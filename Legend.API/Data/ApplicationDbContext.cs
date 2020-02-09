@@ -11,6 +11,8 @@ namespace Legend.API.Data
         {
         }
 
+        public DbSet<ApplicationUser> Users { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -23,12 +25,11 @@ namespace Legend.API.Data
                     .IsRequired()
                     .OnDelete(DeleteBehavior.Cascade);
 
-                users.ToTable("Users").Property(p => p.Id).HasColumnName("UserId");
+                users.ToTable("AspNetUsers").Property(p => p.Id).HasColumnName("Id");
             });
 
-            modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
+            modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("AspNetUserClaims");
         }
 
-        public DbSet<ApplicationUser> Users { get; set; }
     }
 }

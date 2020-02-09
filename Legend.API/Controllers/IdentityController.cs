@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
+using System.Text;
 using Legend.API.Data;
+using Legend.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,21 +21,69 @@ namespace Legend.API.Controllers
         {
             _context = context;
         }
-       
+
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Get()
         {
             try
             {
-                var users = _context.Users
+                var claims = _context.Users
+                .Where(u => u.IsActive)
                 .Include("Claims")
                 .Select(u => new
                 {
-                    u.UserName,
-                    u.Claims
-                }).ToList();
+                    UserId = u.Id,
+                    Email = u.Claims.Where(x => x.ClaimType == "email").FirstOrDefault().ClaimValue,
+                    Photo = u.Claims.Where(x => x.ClaimType == "picture").FirstOrDefault().ClaimValue,
+                });
 
-                return Ok(users);
+                return Ok(claims);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        public IActionResult Post([FromBody]UserRequestModel request)
+        {
+            try
+            {
+                var user = _context.Users.Where(x => x.Email == request.Email).FirstOrDefault();
+                if (user == null)
+                {
+                    _context.Users.Add(user);
+                    _context.SaveChanges();
+
+                    return Ok();
+                }
+                else
+                {
+                    throw new Exception("Email is already existed");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPut]
+        public IActionResult Put([FromBody]UserRequestModel request)
+        {
+            try
+            {
+                var user = _context.Users.Where(x => x.Id == request.UserId).FirstOrDefault();
+                user.IsActive = false;
+                _context.Users.Update(user);
+                _context.SaveChanges();
+
+                return Ok();
             }
             catch (Exception ex)
             {
