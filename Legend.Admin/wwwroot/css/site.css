@@ -261,6 +261,20 @@ button.btn-danger {
     height: 80px;
 }
 
+.btn-link-back {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border: solid 1px #0366d6;
+    border-radius: 4px;
+    text-decoration: none !important;
+}
+
+.m-16 {
+    margin: 16px;
+}
+
 
 @keyframes cdp-in {
     from {

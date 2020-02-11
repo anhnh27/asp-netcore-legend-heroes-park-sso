@@ -38,11 +38,11 @@
         @foreach (var user in Model)
         {
             <tr class="row-item">
-                <td><img src="@user.Photo" alt="" /></td>
+                <td><img src="@user.Picture" alt="" /></td>
                 <td>@user.Email</td>
                 <td>
                     @using (Html.BeginForm("Deactive", "Home", new { userId = @user.UserId }, FormMethod.Post))
-                    { 
+                    {
                         <input type="hidden" id="userId" value="@user.UserId" />
                         <button class="btn-danger" type="submit">Deactive</button>
                     }
@@ -73,4 +73,7 @@
         <a href="#!19" class="cdp_i">19</a>
         <a href="#!+1" class="cdp_i">next</a>
     </div>
+</div>
+<div>
+    <a class="btn-link-back m-16" asp-action="AddUser">Add User</a>
 </div>

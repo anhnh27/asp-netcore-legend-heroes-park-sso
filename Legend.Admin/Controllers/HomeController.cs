@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 using System.Linq;
 using System;
 using System.Text;
+using Legend.Admin.Enums;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Legend.Admin.Controllers
 {
@@ -47,7 +49,7 @@ namespace Legend.Admin.Controllers
                     {
                         UserId = item.Value<string>("userId"),
                         Email = item.Value<string>("email"),
-                        Photo = item.Value<string>("photo") ?? @Url.Content("~/images/avatar-01.png"),
+                        Picture = item.Value<string>("photo") ?? @Url.Content("~/images/avatar-01.png"),
                     });
                 }
             }
@@ -61,9 +63,38 @@ namespace Legend.Admin.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet]
+        public IActionResult AddUser()
+        {
+            var roleLst = new[] {
+                new SelectListItem() { Text = "Staff", Value = "staff" },
+                new SelectListItem() { Text = "Manager", Value = "manager" },
+            };
+
+            var operationLst = new [] {
+                new SelectListItem() { Text = "Scan QR", Value = OperationTypes.ScanQR.ToString() },
+                new SelectListItem() { Text = "Scan Other QR", Value = OperationTypes.ScanOtherQR.ToString() },
+                new SelectListItem() { Text = "Transfer Points", Value = OperationTypes.TransferPoints.ToString() },
+                new SelectListItem() { Text = "Deduct Points", Value = OperationTypes.DeductPoints.ToString() },
+            };
+
+            ViewBag.Operations = operationLst;
+
+            var model = new CreateUserViewModel()
+            {
+                SelectedOperations = new int[] { },
+                OperationList = operationLst,
+
+                RoleList = roleLst,
+            };
+
+            return View(model);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
         public async Task<IActionResult> AddUser(UserViewModel user)
         {
-            var users = new List<UserViewModel>();
             var client = new HttpClient();
             var response = await client.PostAsync(
                 string.Format("{0}/{1}", _configuration.GetSection("ResourceAPIUrl").Value, "api/identity"),
@@ -85,7 +116,7 @@ namespace Legend.Admin.Controllers
         {
             var client = new HttpClient();
             var response = await client.PutAsync(
-                string.Format("{0}/{1}", _configuration.GetSection("ResourceAPIUrl").Value, "api/identity"), 
+                string.Format("{0}/{1}", _configuration.GetSection("ResourceAPIUrl").Value, "api/identity"),
                 new StringContent(JsonConvert.SerializeObject(new { UserId }), Encoding.UTF8, "application/json"));
 
             if (response.IsSuccessStatusCode)
