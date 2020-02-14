@@ -15,6 +15,8 @@ using System;
 using System.Text;
 using Legend.Admin.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Net.Mail;
+using System.Net;
 
 namespace Legend.Admin.Controllers
 {
@@ -29,7 +31,7 @@ namespace Legend.Admin.Controllers
             _configuration = configuration;
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var users = new List<UserViewModel>();
@@ -62,7 +64,7 @@ namespace Legend.Admin.Controllers
             return View(users);
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpGet]
         public IActionResult AddUser()
         {
@@ -91,7 +93,7 @@ namespace Legend.Admin.Controllers
             return View(model);
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> AddUser(UserViewModel user)
         {
@@ -111,7 +113,7 @@ namespace Legend.Admin.Controllers
             }
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<IActionResult> Deactive(string UserId)
         {
             var client = new HttpClient();
@@ -130,12 +132,59 @@ namespace Legend.Admin.Controllers
             }
         }
 
+        //[AllowAnonymous]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        //[AllowAnonymous]
+        [HttpPost]
+        public IActionResult ForgotPassword(string email)
+        {
+            try
+            {
+                var senderEmail = new MailAddress("legendheroesparkopenplatform@gmail.com", "legendheroesparkopenplatform@gmail.com");
+                var receiverEmail = new MailAddress(email, email);
+                var password = "legend@2019";
+                var subject = "Legend Heroes Park - Reset Password";
+                var body = "An email has been sent to your email. Please check your email and follow instruction to reset your password!";
+                
+                SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");
+                SmtpServer.Port = 587;
+                SmtpServer.UseDefaultCredentials = false;
+                SmtpServer.EnableSsl = true;
+                SmtpServer.Credentials = new NetworkCredential("legendheroesparkopenplatform@gmail.com", password);
+
+                MailMessage mail = new MailMessage();
+                mail.From = new MailAddress(senderEmail.Address);
+                mail.To.Add(senderEmail.Address);
+                mail.Subject = subject;
+                mail.Body = body;
+
+                SmtpServer.Send(mail);
+
+                return RedirectToAction("EmailSent");
+            }
+            catch (SmtpException ex)
+            {
+                ViewBag.Error = ex.Message;
+                return RedirectToAction("Error");
+            }
+        }
+
+        //[AllowAnonymous]
+        public IActionResult EmailSent()
+        {
+            return View();
+        }
+
         public IActionResult LogOut()
         {
             return SignOut("Cookies", "oidc");
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public IActionResult LoggedOut()
         {
             return View();

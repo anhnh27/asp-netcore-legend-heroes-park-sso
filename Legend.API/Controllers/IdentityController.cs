@@ -22,7 +22,7 @@ namespace Legend.API.Controllers
             _context = context;
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpGet]
         public IActionResult Get()
         {
@@ -46,7 +46,7 @@ namespace Legend.API.Controllers
             }
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpPost]
         public IActionResult Post([FromBody]UserRequestModel request)
         {
@@ -72,7 +72,7 @@ namespace Legend.API.Controllers
             }
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpPut]
         public IActionResult Put([FromBody]UserRequestModel request)
         {

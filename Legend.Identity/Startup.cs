@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
-
-
 using System;
 using System.IO;
 using System.Reflection;
@@ -42,14 +40,12 @@ namespace Legend.Identity
 
             services.AddControllersWithViews();
 
-            // configures IIS out-of-proc settings (see https://github.com/aspnet/AspNetCore/issues/14882)
             services.Configure<IISOptions>(iis =>
             {
                 iis.AuthenticationDisplayName = "Windows";
                 iis.AutomaticAuthentication = false;
             });
 
-            // configures IIS in-proc settings
             services.Configure<IISServerOptions>(iis =>
             {
                 iis.AuthenticationDisplayName = "Windows";
@@ -61,23 +57,24 @@ namespace Legend.Identity
                 options.UseMySql(connectionString, mySqlOpt => mySqlOpt.MigrationsAssembly(migrationsAssembly));
             });
 
-
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
             services.Configure<IdentityOptions>(options =>
             {
-                // Default SignIn settings.
                 options.SignIn.RequireConfirmedEmail = false;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
                 options.User.RequireUniqueEmail = true;
+
+                #region Password Require Options
                 //options.Password.RequireDigit = true;
                 //options.Password.RequireLowercase = true;
                 //options.Password.RequireNonAlphanumeric = true;
                 //options.Password.RequireUppercase = true;
                 //options.Password.RequiredLength = 6;
                 //options.Password.RequiredUniqueChars = 1;
+                #endregion
             });
 
             #region setup id4
@@ -93,9 +90,9 @@ namespace Legend.Identity
             {
 
                 builder.AddInMemoryPersistedGrants()
-                .AddInMemoryIdentityResources(Config.Ids)
-                .AddInMemoryApiResources(Config.Apis)
-                .AddInMemoryClients(Config.Clients)
+                .AddInMemoryIdentityResources(Config.GetIdentityResources())
+                .AddInMemoryApiResources(Configuration.GetSection("IdentityServer:ApiResources"))
+                .AddInMemoryClients(Configuration.GetSection("IdentityServer:Clients"))
                 .AddAspNetIdentity<ApplicationUser>();
             }
             else
@@ -113,28 +110,23 @@ namespace Legend.Identity
             }
             else
             {
-                builder.AddSigningCredential(GetEmbeddedCertificate());
+                builder.AddSigningCredential(GetEmbeddedCertificate(Environment.ContentRootPath));
             }
-
-            //Add external provider
-            //services.AddAuthentication()
-            //    .AddGoogle(options =>
-            //    {
-            //        // register your IdentityServer with Google at https://console.developers.google.com
-            //        // enable the Google+ API
-            //        // set the redirect URI to http://localhost:5000/signin-google
-            //        options.ClientId = "copy client ID from Google here";
-            //        options.ClientSecret = "copy client secret from Google here";
-            //    });
 
             services.AddTransient<IProfileService, CustomProfileService>();
             services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwnerPasswordValidator>();
-
             #endregion
         }
 
         public void Configure(IApplicationBuilder app)
         {
+            var useInMemory = bool.Parse(Configuration.GetSection("UseInMemoryStores").Value);
+
+            if (!useInMemory)
+            {
+                DatabaseInitializer.Init(app, Configuration);
+            }
+
             if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -152,20 +144,20 @@ namespace Legend.Identity
             });
         }
 
-        private X509Certificate2 GetEmbeddedCertificate()
+        private X509Certificate2 GetEmbeddedCertificate(string rootPath)
         {
             try
             {
-                using (Stream CertStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(@"legend.pfx"))
-                {
-                    byte[] RawBytes = new byte[CertStream.Length];
-                    for (int Index = 0; Index < CertStream.Length; Index++)
-                    {
-                        RawBytes[Index] = (byte)CertStream.ReadByte();
-                    }
+                string[] paths = { @"C:\sso-self-sign-cert", "sso-ssc.pfx" };
 
-                    return new X509Certificate2(RawBytes, Configuration["SigninKeyCredentials:KeyFilePassword"], X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
+                var fileName = Path.Combine(paths);
+
+                if (!File.Exists(fileName))
+                {
+                    throw new FileNotFoundException("Signing Certificate is missing!");
                 }
+
+                return new X509Certificate2(fileName, "abcde12345-");
             }
             catch (Exception e)
             {
