@@ -107,6 +107,14 @@ namespace Legend.Identity.Custom
                             return null;
                         return new ExternalLoginInfo(cp, ExternalProvider.Google, GoogleHelper.GetId(payload), ExternalProvider.Google);
                     }
+                case ExternalProvider.Wechat:
+                    {
+                        var payload = await GoogleHelper.GetGoogleUser(token);
+                        var cp = GoogleHelper.GetClaims(payload);
+                        if (cp == null)
+                            return null;
+                        return new ExternalLoginInfo(cp, ExternalProvider.Google, GoogleHelper.GetId(payload), ExternalProvider.Wechat);
+                    }
                 default:
                     return null;
             }
@@ -128,6 +136,7 @@ namespace Legend.Identity.Custom
         {
             public const string Facebook = "Facebook";
             public const string Google = "Google";
+            public const string Wechat = "Wechat";
         }
     }
 }

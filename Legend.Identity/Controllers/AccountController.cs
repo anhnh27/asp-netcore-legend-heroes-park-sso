@@ -58,22 +58,10 @@ namespace Legend.Identity.Controllers
             });
             user.Claims.Add(new IdentityUserClaim<string>()
             {
-                ClaimType = JwtClaimTypes.Role,
-                ClaimValue = model.Role
-            });
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
                 ClaimType = JwtClaimTypes.PhoneNumber,
                 ClaimValue = model.PhoneNumber
             });
-            if (model.ParkSeq != string.Empty && model.ParkSeq != null && model.Role != "customer")
-            {
-                user.Claims.Add(new IdentityUserClaim<string>()
-                {
-                    ClaimType = CustomJwtClaimType.ParkSeq,
-                    ClaimValue = model.ParkSeq
-                });
-            }
+
             var response = await _userManager.CreateAsync(user, model.Password);
             if (response.Succeeded)
             {
