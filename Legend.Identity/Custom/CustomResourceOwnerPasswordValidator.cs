@@ -109,11 +109,11 @@ namespace Legend.Identity.Custom
                     }
                 case ExternalProvider.Wechat:
                     {
-                        var payload = await GoogleHelper.GetGoogleUser(token);
-                        var cp = GoogleHelper.GetClaims(payload);
+                        var payload = await WechatHelper.GetWechatUser(token);
+                        var cp = WechatHelper.GetClaims(payload);
                         if (cp == null)
                             return null;
-                        return new ExternalLoginInfo(cp, ExternalProvider.Google, GoogleHelper.GetId(payload), ExternalProvider.Wechat);
+                        return new ExternalLoginInfo(cp, ExternalProvider.Wechat, WechatHelper.GetId(payload), ExternalProvider.Wechat);
                     }
                 default:
                     return null;
@@ -126,6 +126,7 @@ namespace Legend.Identity.Custom
             {
                 case ExternalProvider.Facebook:
                 case ExternalProvider.Google:
+                case ExternalProvider.Wechat:
                     return true;
                 default:
                     return false;

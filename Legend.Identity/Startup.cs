@@ -2,15 +2,18 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
 using System.IO;
+using System.Net.Mail;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using IdentityServer4.Services;
 using IdentityServer4.Validation;
 using Legend.Identity.Custom;
 using Legend.Identity.Data;
+using Legend.Identity.Helper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +42,16 @@ namespace Legend.Identity
             var useInMemory = bool.Parse(Configuration.GetSection("UseInMemoryStores").Value);
 
             services.AddControllersWithViews();
+
+            services.AddTransient<IEmailSender, EmailSender>(i =>
+                new EmailSender(
+                    Configuration["EmailSender:Host"],
+                    Configuration.GetValue<int>("EmailSender:Port"),
+                    Configuration.GetValue<bool>("EmailSender:EnableSSL"),
+                    Configuration["EmailSender:UserName"],
+                    Configuration["EmailSender:Password"]
+                )
+            );
 
             services.Configure<IISOptions>(iis =>
             {
