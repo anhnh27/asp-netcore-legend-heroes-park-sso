@@ -9,6 +9,11 @@ using Microsoft.AspNetCore.Http;
 using System.Net.Mail;
 using System.Net;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Web;
+using System.Collections.Generic;
+using System.Linq;
+using Legend.Identity.Helper;
 
 namespace Legend.Identity.Controllers
 {
@@ -44,12 +49,12 @@ namespace Legend.Identity.Controllers
             user.Claims.Add(new IdentityUserClaim<string>()
             {
                 ClaimType = JwtClaimTypes.GivenName,
-                ClaimValue = model.Firstname
+                ClaimValue = model.FirstName
             });
             user.Claims.Add(new IdentityUserClaim<string>()
             {
                 ClaimType = JwtClaimTypes.FamilyName,
-                ClaimValue = model.Lastname
+                ClaimValue = model.LastName
             });
             user.Claims.Add(new IdentityUserClaim<string>()
             {
@@ -90,34 +95,103 @@ namespace Legend.Identity.Controllers
             }
         }
 
-        [HttpPost]
-        [Route("resetpwd")]
-        public async Task<IActionResult> ResetPassword([FromBody]ResetPwdViewModel model)
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("requestpasswordresetemail/{email}")]
+        public async Task<IActionResult> SendPasswordResetEmailAsync(string email)
         {
             try
             {
+                var userEntity = await _userManager.FindByEmailAsync(email);
+
+                if (userEntity == null)
+                {
+                    return NoContent();
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(userEntity);
+
+                var callback = Url.Action("ResetPassword", "Account", new { email, code }, protocol: HttpContext.Request.Scheme);
+                var subject = "Legend Heroes Park - Reset Password";
+                var body = string.Format("Please reset your password by clicking <a href='{0}'>here</a>.", callback);
+
+                await _emailSender.SendEmailAsync(email, subject, body);
+
+                return Ok(new { ResetPasswordLink = body });
+            }
+            catch (Exception ex)
+            {
+                var result = StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+                return result;
+            }
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("resetpassword")]
+        public async Task<IActionResult> ResetPassword(string email, [FromQuery]string code)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(email))
+                {
+                    return NoContent();
+                }
+
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return NoContent();
+                }
+
+                var temporaryPassword = Utilities.GenerateRandomPassword();
+                var result = await _userManager.ResetPasswordAsync(user, code, "1");
+
+                if (!result.Succeeded)
+                {
+                    return Ok(new { Message = "Reset password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
+                }
+
+                var subject = "Legend Heroes Park - Temporary Password";
+                var body = "Your temporary password is: " + temporaryPassword + "<br/> Please login and change your password.";
+
+                await _emailSender.SendEmailAsync(email, subject, body);
+
+                return Ok(new { Message = "Your password has been reset. Check your email to get temporary password." });
+            }
+            catch (Exception ex)
+            {
+                var result = StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+                return result;
+            }
+        }
+
+        [HttpPost]
+        [Route("changepassword")]
+        public async Task<IActionResult> ChangePassword([FromBody]ResetPasswordModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return NoContent();
+                }
+
                 var user = await _userManager.FindByEmailAsync(model.Email);
-
-                if (user != null)
+                if (user == null)
                 {
-                    string code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var resetLink = Url.Action("ResetPassword", "Account", new { token = code }, protocol: HttpContext.Request.Scheme);
-
-                    try
-                    {
-                        await _emailSender.SendEmailAsync("nguyenhoanganh10290@gmail.com", "LHP email verification", "This is verification email from Legend Heroes Park");
-
-                        return Ok(new { message = "Password reset link has been sent to your email address!" });
-                    }
-                    catch (SmtpException ex)
-                    {
-                        return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
-                    }
+                    return NoContent();
                 }
-                else
+
+                await _userManager.RemovePasswordAsync(user);
+                var result = await _userManager.AddPasswordAsync(user, model.NewPassword);
+
+                if (!result.Succeeded)
                 {
-                    return Ok(new { message = "Email is not existed" });
+                    return Ok(new { Message = "Update password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
                 }
+
+                return Ok(new { Message = "Your password has been changes." });
             }
             catch (Exception ex)
             {

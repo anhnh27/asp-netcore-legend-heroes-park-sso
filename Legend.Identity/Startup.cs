@@ -43,6 +43,7 @@ namespace Legend.Identity
 
             services.AddControllersWithViews();
 
+
             services.AddTransient<IEmailSender, EmailSender>(i =>
                 new EmailSender(
                     Configuration["EmailSender:Host"],
@@ -73,6 +74,8 @@ namespace Legend.Identity
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+
+            services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
 
             services.Configure<IdentityOptions>(options =>
             {
