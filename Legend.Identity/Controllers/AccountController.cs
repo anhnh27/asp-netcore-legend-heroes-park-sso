@@ -106,7 +106,7 @@ namespace Legend.Identity.Controllers
 
                 if (userEntity == null)
                 {
-                    return NoContent();
+                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email});
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(userEntity);
@@ -117,11 +117,11 @@ namespace Legend.Identity.Controllers
 
                 await _emailSender.SendEmailAsync(email, subject, body);
 
-                return Ok(new { ResetPasswordLink = body });
+                return Ok(new { Ok = true, Message = "An email has been sent to your email. Please check your email and follow instruction to reset your password. The email might be in your spam folder." });
             }
             catch (Exception ex)
             {
-                var result = StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+                var result = StatusCode(StatusCodes.Status500InternalServerError, new { Ok = false, ex.Message });
                 return result;
             }
         }
@@ -141,27 +141,27 @@ namespace Legend.Identity.Controllers
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
-                    return NoContent();
+                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email });
                 }
 
                 var temporaryPassword = Utilities.GenerateRandomPassword();
-                var result = await _userManager.ResetPasswordAsync(user, code, "1");
+                var result = await _userManager.ResetPasswordAsync(user, code, temporaryPassword);
 
                 if (!result.Succeeded)
                 {
-                    return Ok(new { Message = "Reset password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
+                    return Ok(new { Ok = false, Message = "Reset password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
                 }
 
                 var subject = "Legend Heroes Park - Temporary Password";
-                var body = "Your temporary password is: " + temporaryPassword + "<br/> Please login and change your password.";
+                var body = string.Format("Your temporary password is: '{0}' <br/> Please login and change your password.", temporaryPassword);
 
                 await _emailSender.SendEmailAsync(email, subject, body);
 
-                return Ok(new { Message = "Your password has been reset. Check your email to get temporary password." });
+                return Ok(new { Ok = true, Message = "Your password has been reset. Check your email to get temporary password." });
             }
             catch (Exception ex)
             {
-                var result = StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+                var result = StatusCode(StatusCodes.Status500InternalServerError, new { Ok = false, ex.Message });
                 return result;
             }
         }
@@ -180,7 +180,27 @@ namespace Legend.Identity.Controllers
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
-                    return NoContent();
+                    return Ok(new { Ok = true, Message = "Could not find user with email: " + model.Email });
+                }
+
+                var pwdErrors = new List<string>();
+                var validators = _userManager.PasswordValidators;
+                foreach (var item in validators)
+                {
+                    var isValid = await item.ValidateAsync(_userManager, user, model.NewPassword);
+
+                    if (!isValid.Succeeded)
+                    {
+                        foreach (var error in isValid.Errors)
+                        {
+                            pwdErrors.Add(error.Description);
+                        }
+                    }
+                }
+
+                if (pwdErrors.Count > 0)
+                {
+                    return Ok(new { Ok = false, Message = "Password is not valid. Message: " + string.Join(", ", pwdErrors) });
                 }
 
                 await _userManager.RemovePasswordAsync(user);
@@ -188,14 +208,14 @@ namespace Legend.Identity.Controllers
 
                 if (!result.Succeeded)
                 {
-                    return Ok(new { Message = "Update password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
+                    return Ok(new { Ok = false, Message = "Update password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
                 }
 
-                return Ok(new { Message = "Your password has been changes." });
+                return Ok(new { Ok = true, Message = "Your password has been changes." });
             }
             catch (Exception ex)
             {
-                var result = StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+                var result = StatusCode(StatusCodes.Status500InternalServerError, new { Ok = false, ex.Message });
                 return result;
             }
         }

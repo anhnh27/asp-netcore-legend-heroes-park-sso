@@ -7,20 +7,19 @@ namespace Legend.Identity.Helper
 {
     public class Utilities
     {
-        public static string GenerateRandomPassword(PasswordOptions opts = null)
+        public static string GenerateRandomPassword()
         {
-            if (opts == null)
-                opts = new PasswordOptions()
-                {
-                    RequiredLength = 8,
-                    RequiredUniqueChars = 4,
-                    RequireDigit = true,
-                    RequireNonAlphanumeric = true,
-                    RequireLowercase = true,
-                    RequireUppercase = true
-                };
+            var opts = new PasswordOptions()
+            {
+                RequiredLength = 8,
+                RequireDigit = true,
+                RequireNonAlphanumeric = true,
+                RequireLowercase = true,
+                RequireUppercase = true,
+            };
 
-            string[] randomChars = new[] {
+            string[] randomChars = new[] 
+            {
                 "ABCDEFGHJKLMNOPQRSTUVWXYZ",    // uppercase 
                 "abcdefghijkmnopqrstuvwxyz",    // lowercase
                 "0123456789",                   // digits
@@ -30,21 +29,13 @@ namespace Legend.Identity.Helper
             Random rand = new Random(Environment.TickCount);
             List<char> chars = new List<char>();
 
-            if (opts.RequireUppercase)
-                chars.Insert(rand.Next(0, chars.Count),
-                    randomChars[0][rand.Next(0, randomChars[0].Length)]);
+            if (opts.RequireUppercase) chars.Insert(rand.Next(0, chars.Count), randomChars[0][rand.Next(0, randomChars[0].Length)]);
 
-            if (opts.RequireLowercase)
-                chars.Insert(rand.Next(0, chars.Count),
-                    randomChars[1][rand.Next(0, randomChars[1].Length)]);
+            if (opts.RequireLowercase) chars.Insert(rand.Next(0, chars.Count), randomChars[1][rand.Next(0, randomChars[1].Length)]);
 
-            if (opts.RequireDigit)
-                chars.Insert(rand.Next(0, chars.Count),
-                    randomChars[2][rand.Next(0, randomChars[2].Length)]);
+            if (opts.RequireDigit) chars.Insert(rand.Next(0, chars.Count), randomChars[2][rand.Next(0, randomChars[2].Length)]);
 
-            if (opts.RequireNonAlphanumeric)
-                chars.Insert(rand.Next(0, chars.Count),
-                    randomChars[3][rand.Next(0, randomChars[3].Length)]);
+            if (opts.RequireNonAlphanumeric) chars.Insert(rand.Next(0, chars.Count), randomChars[3][rand.Next(0, randomChars[3].Length)]);
 
             for (int i = chars.Count; i < opts.RequiredLength || chars.Distinct().Count() < opts.RequiredUniqueChars; i++)
             {
