@@ -1,15 +1,20 @@
 ﻿// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Mail;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+using IdentityServer4;
 using IdentityServer4.Services;
 using IdentityServer4.Validation;
 using Legend.Identity.Custom;
 using Legend.Identity.Data;
 using Legend.Identity.Helper;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -91,6 +96,27 @@ namespace Legend.Identity
                 options.Password.RequireUppercase = true;
                 #endregion
             });
+
+            //services.AddAuthentication().AddGoogle("Google", options =>
+            //{
+            //    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+            //    options.ClientId = "104405665581-u9cgc6msrmemvbqltc21fno8igf00kh1.apps.googleusercontent.com";
+            //    options.ClientSecret = "rkOBk0CJGqs4uBivs_ZqqnAC";
+            //    options.ClaimActions.MapJsonKey("urn:google:picture", "picture", "url");
+            //    options.SaveTokens = true;
+
+            //    options.Events.OnCreatingTicket = ctx =>
+            //    {
+            //        List<AuthenticationToken> tokens = ctx.Properties.GetTokens().ToList();
+            //        tokens.Add(new AuthenticationToken()
+            //        {
+            //            Name = "TicketCreated",
+            //            Value = DateTime.UtcNow.ToString()
+            //        });
+            //        ctx.Properties.StoreTokens(tokens);
+            //        return Task.CompletedTask;
+            //    };
+            //});
 
             #region setup id4
             var builder = services.AddIdentityServer(options =>
