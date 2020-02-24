@@ -36,11 +36,9 @@ namespace Legend.API
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                // base-address of your identityserver
                 options.Authority = _environment.IsDevelopment() ? _configuration["Authority:Dev"] : _configuration["Authority:Production"];
                 options.RequireHttpsMetadata = false;
-
-                options.Audience = "legend_api";
+                options.Audience = "mobile_api";
             });
         }
 

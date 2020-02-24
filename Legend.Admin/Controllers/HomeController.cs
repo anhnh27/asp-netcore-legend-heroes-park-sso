@@ -31,7 +31,7 @@ namespace Legend.Admin.Controllers
             _configuration = configuration;
         }
 
-        //[AllowAnonymous]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var users = new List<UserViewModel>();
@@ -64,7 +64,6 @@ namespace Legend.Admin.Controllers
             return View(users);
         }
 
-        //[AllowAnonymous]
         [HttpGet]
         public IActionResult AddUser()
         {
