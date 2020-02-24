@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -97,26 +96,32 @@ namespace Legend.Identity
                 #endregion
             });
 
-            //services.AddAuthentication().AddGoogle("Google", options =>
-            //{
-            //    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-            //    options.ClientId = "104405665581-u9cgc6msrmemvbqltc21fno8igf00kh1.apps.googleusercontent.com";
-            //    options.ClientSecret = "rkOBk0CJGqs4uBivs_ZqqnAC";
-            //    options.ClaimActions.MapJsonKey("urn:google:picture", "picture", "url");
-            //    options.SaveTokens = true;
+            services.AddAuthentication()
+                .AddGoogle("Google", options =>
+                {
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                    options.ClientId = Configuration["Authentication:Google:ClientId"];
+                    options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+                    options.ClaimActions.MapJsonKey("urn:google:picture", "picture", "url");
+                    options.SaveTokens = true;
 
-            //    options.Events.OnCreatingTicket = ctx =>
-            //    {
-            //        List<AuthenticationToken> tokens = ctx.Properties.GetTokens().ToList();
-            //        tokens.Add(new AuthenticationToken()
-            //        {
-            //            Name = "TicketCreated",
-            //            Value = DateTime.UtcNow.ToString()
-            //        });
-            //        ctx.Properties.StoreTokens(tokens);
-            //        return Task.CompletedTask;
-            //    };
-            //});
+                    options.Events.OnCreatingTicket = ctx =>
+                    {
+                        List<AuthenticationToken> tokens = ctx.Properties.GetTokens().ToList();
+                        tokens.Add(new AuthenticationToken()
+                        {
+                            Name = "TicketCreated",
+                            Value = DateTime.UtcNow.ToString()
+                        });
+                        ctx.Properties.StoreTokens(tokens);
+                        return Task.CompletedTask;
+                    };
+                })
+                .AddFacebook(options =>
+                {
+                    options.AppId = Configuration["Authentication:Facebook:AppId"];
+                    options.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
+                });
 
             #region setup id4
             var builder = services.AddIdentityServer(options =>
