@@ -21,15 +21,15 @@ namespace Legend.Identity
         {
             using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
-                serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+                var persistedGrantDbContext = serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>();
+                //persistedGrantDbContext.Database.Migrate();
 
-                var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+                var configurationDbContext = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+                //configurationDbContext.Database.Migrate();
 
-                context.Database.Migrate();
+                configurationDbContext.Clients.RemoveRange(configurationDbContext.Clients.ToList());
 
-                context.Clients.RemoveRange(context.Clients.ToList());
-
-                if (!context.Clients.Any())
+                if (!configurationDbContext.Clients.Any())
                 {
                     var clientSections = config.GetSection("IdentityServer:Clients").GetChildren();
                     var clients = new List<Client>();
@@ -66,21 +66,21 @@ namespace Legend.Identity
 
                     foreach (var client in clients)
                     {
-                        context.Clients.Add(client.ToEntity());
+                        configurationDbContext.Clients.Add(client.ToEntity());
                     }
-                    context.SaveChanges();
+                    configurationDbContext.SaveChanges();
                 }
 
-                if (!context.IdentityResources.Any())
+                if (!configurationDbContext.IdentityResources.Any())
                 {
                     foreach (var resource in Config.GetIdentityResources())
                     {
-                        context.IdentityResources.Add(resource.ToEntity());
+                        configurationDbContext.IdentityResources.Add(resource.ToEntity());
                     }
-                    context.SaveChanges();
+                    configurationDbContext.SaveChanges();
                 }
 
-                if (!context.ApiResources.Any())
+                if (!configurationDbContext.ApiResources.Any())
                 {
                     var apiResourceSections = config.GetSection("IdentityServer:ApiResources").GetChildren();
                     var apiResources = new List<ApiResource>();
@@ -92,50 +92,13 @@ namespace Legend.Identity
 
                     foreach (var resource in apiResources)
                     {
-                        context.ApiResources.Add(resource.ToEntity());
+                        configurationDbContext.ApiResources.Add(resource.ToEntity());
                     }
-                    context.SaveChanges();
+                    configurationDbContext.SaveChanges();
                 }
 
-                #region Add Default User
-                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-                var admin = userManager.FindByEmailAsync("anhnh27@hotmail.com").Result;
-                if (admin == null)
-                {
-                    admin = new ApplicationUser
-                    {
-                        UserName = "anhnh27",
-                        Email = "anhnh27@hotmail.com",
-                    };
-
-                    var result = userManager.CreateAsync(admin, "P@ssword1").Result;
-                   
-                    if (!result.Succeeded)
-                    {
-                        throw new Exception(result.Errors.First().Description);
-                    }
-
-                    admin = userManager.FindByEmailAsync("anhnh27@hotmail.com").Result;
-
-                    result = userManager.AddClaimsAsync(admin, new Claim[]
-                    {
-                        new Claim(JwtClaimTypes.Email, "anhnh27@hotmail.com"),
-                        new Claim(JwtClaimTypes.GivenName, "Alex"),
-                        new Claim(JwtClaimTypes.FamilyName, "Nguyen"),
-                        new Claim(JwtClaimTypes.Picture, "https://i.pinimg.com/originals/cf/68/73/cf68732c4a8b2b8d62a272d161fb58f4.jpg"),
-                    }).Result;
-
-                    if (!result.Succeeded)
-                    {
-                        throw new Exception(result.Errors.First().Description);
-                    }
-                    Console.WriteLine("admin created");
-                }
-                else
-                {
-                    Console.WriteLine("admin already exists");
-                }
-                #endregion
+                //var applicationDbContext = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                //applicationDbContext.Database.Migrate();
             }
         }
     }
