@@ -6,6 +6,7 @@ using Legend.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,13 +17,14 @@ namespace Legend.API.Controllers
     public class IdentityController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<IdentityController> _logger;
 
-        public IdentityController(ApplicationDbContext context)
+        public IdentityController(ApplicationDbContext context, ILogger<IdentityController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        //[AllowAnonymous]
         [HttpGet]
         public IActionResult Get()
         {
@@ -42,11 +44,11 @@ namespace Legend.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 throw new Exception(ex.Message);
             }
         }
 
-        //[AllowAnonymous]
         [HttpPost]
         public IActionResult Post([FromBody]UserRequestModel request)
         {
@@ -72,7 +74,6 @@ namespace Legend.API.Controllers
             }
         }
 
-        //[AllowAnonymous]
         [HttpPut]
         public IActionResult Put([FromBody]UserRequestModel request)
         {

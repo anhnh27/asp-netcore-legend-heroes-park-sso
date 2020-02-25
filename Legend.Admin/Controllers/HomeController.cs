@@ -57,6 +57,7 @@ namespace Legend.Admin.Controllers
             }
             else
             {
+                _logger.LogError(JsonConvert.SerializeObject(response));
                 _logger.LogError("get user error");
                 return StatusCode(500);
             }
