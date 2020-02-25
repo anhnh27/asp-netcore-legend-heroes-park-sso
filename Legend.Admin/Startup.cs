@@ -31,7 +31,7 @@ namespace Legend.Admin
             .AddCookie("Cookies")
             .AddOpenIdConnect("oidc", options =>
             {
-                options.Authority = "http://localhost:5000";
+                options.Authority = "https://mobile.legend-park.com";
                 options.RequireHttpsMetadata = false;
                 options.ClientId = "31b7732e-733b-4081-91ff-290879dd0d65b";
                 options.ClientSecret = "3d73bc46-d313-4155-8074-8cb1c13ada03";
