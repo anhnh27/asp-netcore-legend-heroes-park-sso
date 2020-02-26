@@ -582,3 +582,12 @@ iframe {
     -moz-transition: all 0.4s;
     transition: all 0.4s;
 }
+
+.social-group {
+    width: inherit;
+    text-align: center;
+}
+
+.btn-social {
+    width: 70px;
+}

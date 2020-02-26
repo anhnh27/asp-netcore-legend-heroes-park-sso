@@ -1,21 +1,12 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:5000",
-      "sslPort": 44380
-    }
-  },
   "profiles": {
     "Legend.Identity": {
-      "commandName": "IISExpress",
+      "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:5000",
-      "sslPort": 443
+      "applicationUrl": "http://localhost:5000"
     },
     "SelfHost": {
       "commandName": "Project",

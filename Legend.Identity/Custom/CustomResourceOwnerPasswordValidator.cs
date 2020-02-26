@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.AspNetIdentity;
@@ -137,7 +136,7 @@ namespace Legend.Identity.Custom
         {
             public const string Facebook = "Facebook";
             public const string Google = "Google";
-            public const string Wechat = "Wechat";
+            public const string Wechat = "WeChat";
         }
     }
 }

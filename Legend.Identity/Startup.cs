@@ -135,6 +135,11 @@ namespace Legend.Identity
                         return Task.CompletedTask;
                     };
                 });
+                //.AddWeixinAuthentication(options =>
+                //{
+                //    options.ClientId = Configuration["Authentication:WeChat:AppId"];
+                //    options.ClientSecret = Configuration["Authentication:WeChat:AppSecret"];
+                //});
 
             #region setup id4
             var builder = services.AddIdentityServer(options =>
