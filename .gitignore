@@ -224,3 +224,4 @@ __pycache__/
 Thumbs.db
 
 .vs/
+Legend.Identity/Data/Migrations/
