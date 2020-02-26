@@ -48,6 +48,10 @@ namespace Legend.Identity
                             ClientSecrets = { new Secret(secret.Sha256()) },
                             AllowedGrantTypes = grantTypes,
                             AllowedScopes = scopes,
+
+                            RequirePkce = clientSection.GetValue<bool>("RequirePkce"),
+                            RequireClientSecret = clientSection.GetValue<bool>("RequireClientSecret"),
+                            AllowOfflineAccess = clientSection.GetValue<bool>("AllowOfflineAccess"),
                         };
 
                         if (clientSection.GetSection("ClientName").Value.StartsWith("MVC"))

@@ -42,6 +42,7 @@ body, html {
     height: 95vh;
     margin: 0 !important;
     overflow: hidden;
+    background: #3d3d3d;
 }
 
 /*---------------------------------------------*/
@@ -216,12 +217,11 @@ iframe {
     justify-content: center;
     align-items: flex-start;
     padding: 44px;
-    background: #fff;
+    background: #3d3d3d;
 }
 
 .wrap-login100 {
     width: 390px;
-    background: #fff;
 }
 
 
