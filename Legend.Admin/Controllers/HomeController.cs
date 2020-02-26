@@ -32,37 +32,39 @@ namespace Legend.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
+        //public async Task<IActionResult> Index()
         {
-            var users = new List<UserViewModel>();
-            var client = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Get, string.Format("{0}/{1}", _configuration.GetSection("ResourceAPIUrl").Value, "api/identity"));
-            request.Headers.Add("Accept", "application/json");
+            //var users = new List<UserViewModel>();
+            //var client = new HttpClient();
+            //var request = new HttpRequestMessage(HttpMethod.Get, string.Format("{0}/{1}", _configuration.GetSection("ResourceAPIUrl").Value, "api/identity"));
+            //request.Headers.Add("Accept", "application/json");
 
-            var response = await client.SendAsync(request);
+            //var response = await client.SendAsync(request);
 
-            if (response.IsSuccessStatusCode)
-            {
-                var jResponse = await response.Content.ReadAsStringAsync();
-                var jUsers = JArray.Parse(jResponse);
-                foreach (var item in jUsers)
-                {
-                    users.Add(new UserViewModel
-                    {
-                        UserId = item.Value<string>("userId"),
-                        Email = item.Value<string>("email"),
-                        Picture = item.Value<string>("photo") ?? @Url.Content("~/images/avatar-01.png"),
-                    });
-                }
-            }
-            else
-            {
-                _logger.LogError(JsonConvert.SerializeObject(response));
-                _logger.LogError("get user error");
-                return StatusCode(500);
-            }
+            //if (response.IsSuccessStatusCode)
+            //{
+            //    var jResponse = await response.Content.ReadAsStringAsync();
+            //    var jUsers = JArray.Parse(jResponse);
+            //    foreach (var item in jUsers)
+            //    {
+            //        users.Add(new UserViewModel
+            //        {
+            //            UserId = item.Value<string>("userId"),
+            //            Email = item.Value<string>("email"),
+            //            Picture = item.Value<string>("photo") ?? @Url.Content("~/images/avatar-01.png"),
+            //        });
+            //    }
+            //}
+            //else
+            //{
+            //    _logger.LogError(JsonConvert.SerializeObject(response));
+            //    _logger.LogError("get user error");
+            //    return StatusCode(500);
+            //}
 
-            return View(users);
+            //return View(users);
+            return View();
         }
 
         [HttpGet]
