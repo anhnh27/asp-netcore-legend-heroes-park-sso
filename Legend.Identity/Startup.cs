@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -46,7 +47,6 @@ namespace Legend.Identity
             var useInMemory = bool.Parse(Configuration.GetSection("UseInMemoryStores").Value);
 
             services.AddControllersWithViews();
-
 
             services.AddTransient<IEmailSender, EmailSender>(i =>
                 new EmailSender(

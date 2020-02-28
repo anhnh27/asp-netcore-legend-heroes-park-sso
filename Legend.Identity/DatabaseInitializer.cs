@@ -1,17 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Security.Claims;
-using IdentityModel;
+﻿using System.Linq;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Mappers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using IdentityServer4.Models;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Identity;
-using Legend.Identity.Data;
 
 namespace Legend.Identity
 {
@@ -36,7 +30,8 @@ namespace Legend.Identity
 
                     foreach (var clientSection in clientSections)
                     {
-                        var secret = clientSection.GetSection("ClientSecrets").GetChildren().First().GetValue<string>("Value");
+                        var clientId = clientSection.GetSection("ClientId").Value;
+                        var clientSecret = clientSection.GetSection("ClientSecrets").GetChildren().First().GetValue<string>("Value");
                         ICollection<string> grantTypes = clientSection.GetSection("AllowedGrantTypes").AsEnumerable().Where(x => x.Value != null).Select(x => x.Value).ToList();
                         ICollection<string> scopes = clientSection.GetSection("AllowedScopes").AsEnumerable().Where(x => x.Value != null).Select(x => x.Value).ToList();
 
@@ -45,24 +40,25 @@ namespace Legend.Identity
                             Enabled = clientSection.GetValue<bool>("Enabled"),
                             ClientId = clientSection.GetSection("ClientId").Value,
                             ClientName = clientSection.GetSection("ClientName").Value,
-                            ClientSecrets = { new Secret(secret.Sha256()) },
+                            ClientSecrets = { new Secret(clientSecret.Sha256()) },
                             AllowedGrantTypes = grantTypes,
                             AllowedScopes = scopes,
-
-                            RequirePkce = clientSection.GetValue<bool>("RequirePkce"),
-                            RequireClientSecret = clientSection.GetValue<bool>("RequireClientSecret"),
-                            AllowOfflineAccess = clientSection.GetValue<bool>("AllowOfflineAccess"),
                         };
 
-                        if (clientSection.GetSection("ClientName").Value.StartsWith("MVC"))
+                        if (clientId == "7fd33fc2-5ed7-42f6-9015-5952a502d1c3")
+                        {
+                            ICollection<string> redirectUris = clientSection.GetSection("RedirectUris").AsEnumerable().Where(x => x.Value != null).Select(x => x.Value).ToList();
+                            client.RedirectUris = redirectUris;
+                            client.RequirePkce = clientSection.GetValue<bool>("RequirePkce");
+                            client.RequireClientSecret = clientSection.GetValue<bool>("RequireClientSecret");
+                            client.AllowOfflineAccess = clientSection.GetValue<bool>("AllowOfflineAccess");
+                        }
+                        else if (clientId == "31b7732e-733b-4081-91ff-290879dd0d65b")
                         {
                             ICollection<string> redirectUris = clientSection.GetSection("RedirectUris").AsEnumerable().Where(x => x.Value != null).Select(x => x.Value).ToList();
                             ICollection<string> postLogoutRedirectUris = clientSection.GetSection("PostLogoutRedirectUris").AsEnumerable().Where(x => x.Value != null).Select(x => x.Value).ToList();
-
                             client.RedirectUris = redirectUris;
                             client.PostLogoutRedirectUris = redirectUris;
-                            client.RequireConsent = clientSection.GetValue<bool>("RequireConsent");
-                            client.RequirePkce = clientSection.GetValue<bool>("RequirePkce");
                         }
 
                         clients.Add(client);

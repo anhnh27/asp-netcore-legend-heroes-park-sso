@@ -51,7 +51,8 @@ namespace IdentityServer4.Quickstart.UI
         [HttpGet]
         public IActionResult Challenge(string provider, string returnUrl)
         {
-            if (string.IsNullOrEmpty(returnUrl)) returnUrl = "~/";
+            if (string.IsNullOrEmpty(returnUrl))
+                returnUrl = "~/";
 
             // validate returnUrl - either it is a valid OIDC URL or back to a local page
             if (Url.IsLocalUrl(returnUrl) == false && _interaction.IsValidReturnUrl(returnUrl) == false)
@@ -59,27 +60,6 @@ namespace IdentityServer4.Quickstart.UI
                 // user might have clicked on a malicious link - should be logged
                 throw new Exception("invalid return URL");
             }
-
-            //if (AccountOptions.WindowsAuthenticationSchemeName == provider)
-            //{
-            //    // windows authentication needs special handling
-            //    return await ProcessWindowsLoginAsync(returnUrl);
-            //}
-            //else
-            //{
-            //    // start challenge and roundtrip the return URL and scheme 
-            //    var props = new AuthenticationProperties
-            //    {
-            //        RedirectUri = Url.Action(nameof(Callback)),
-            //        Items =
-            //        {
-            //            { "returnUrl", returnUrl },
-            //            { "scheme", provider },
-            //        }
-            //    };
-
-            //    return Challenge(props, provider);
-            //}
 
             var props = new AuthenticationProperties
             {
@@ -114,13 +94,13 @@ namespace IdentityServer4.Quickstart.UI
             }
 
             // lookup our user and external provider info
-            var (user, provider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
+            var (accessToken, user, provider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
             if (user == null)
             {
                 // this might be where you might initiate a custom workflow for user registration
                 // in this sample we don't show how that would be done, as our sample implementation
                 // simply auto-provisions new external user
-                user = await AutoProvisionUserAsync(provider, providerUserId, claims);
+                user = await AutoProvisionUserAsync(accessToken, provider, providerUserId, claims);
             }
 
             // this allows us to collect any additonal claims or properties
@@ -163,55 +143,7 @@ namespace IdentityServer4.Quickstart.UI
             return Redirect(returnUrl);
         }
 
-        //private async Task<IActionResult> ProcessWindowsLoginAsync(string returnUrl)
-        //{
-        //    // see if windows auth has already been requested and succeeded
-        //    var result = await HttpContext.AuthenticateAsync(AccountOptions.WindowsAuthenticationSchemeName);
-        //    if (result?.Principal is WindowsPrincipal wp)
-        //    {
-        //        // we will issue the external cookie and then redirect the
-        //        // user back to the external callback, in essence, treating windows
-        //        // auth the same as any other external authentication mechanism
-        //        var props = new AuthenticationProperties()
-        //        {
-        //            RedirectUri = Url.Action("Callback"),
-        //            Items =
-        //            {
-        //                { "returnUrl", returnUrl },
-        //                { "scheme", AccountOptions.WindowsAuthenticationSchemeName },
-        //            }
-        //        };
-
-        //        var id = new ClaimsIdentity(AccountOptions.WindowsAuthenticationSchemeName);
-        //        id.AddClaim(new Claim(JwtClaimTypes.Subject, wp.FindFirst(ClaimTypes.PrimarySid).Value));
-        //        id.AddClaim(new Claim(JwtClaimTypes.Name, wp.Identity.Name));
-
-        //        // add the groups as claims -- be careful if the number of groups is too large
-        //        if (AccountOptions.IncludeWindowsGroups)
-        //        {
-        //            var wi = wp.Identity as WindowsIdentity;
-        //            var groups = wi.Groups.Translate(typeof(NTAccount));
-        //            var roles = groups.Select(x => new Claim(JwtClaimTypes.Role, x.Value));
-        //            id.AddClaims(roles);
-        //        }
-
-        //        await HttpContext.SignInAsync(
-        //            IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme,
-        //            new ClaimsPrincipal(id),
-        //            props);
-        //        return Redirect(props.RedirectUri);
-        //    }
-        //    else
-        //    {
-        //        // trigger windows auth
-        //        // since windows auth don't support the redirect uri,
-        //        // this URL is re-triggered when we call challenge
-        //        return Challenge(AccountOptions.WindowsAuthenticationSchemeName);
-        //    }
-        //}
-
-        private async Task<(ApplicationUser user, string provider, string providerUserId, IEnumerable<Claim> claims)>
-            FindUserFromExternalProviderAsync(AuthenticateResult result)
+        private async Task<(string accessToken, ApplicationUser user, string provider, string providerUserId, IEnumerable<Claim> claims)> FindUserFromExternalProviderAsync(AuthenticateResult result)
         {
             var externalUser = result.Principal;
 
@@ -228,66 +160,41 @@ namespace IdentityServer4.Quickstart.UI
 
             var provider = result.Properties.Items["scheme"];
             var providerUserId = userIdClaim.Value;
-
+            var accessToken = result.Properties.Items[".Token.access_token"];
             // find external user
             var user = await _userManager.FindByLoginAsync(provider, providerUserId);
 
-            return (user, provider, providerUserId, claims);
+            return (accessToken, user, provider, providerUserId, claims);
         }
 
-        private async Task<ApplicationUser> AutoProvisionUserAsync(string provider, string providerUserId, IEnumerable<Claim> claims)
+        private async Task<ApplicationUser> AutoProvisionUserAsync(string accessToken, string provider, string providerUserId, IEnumerable<Claim> claims)
         {
-            // create a list of claims that we want to transfer into our store
             var filtered = new List<Claim>();
 
-            // user's display name
-            var name = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Name)?.Value ??
-                claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
-            if (name != null)
+            if (provider == "Google")
             {
-                filtered.Add(new Claim(JwtClaimTypes.Name, name));
+                filtered = GetGoogleUserClaims(claims).ToList();
             }
-            else
+            else if (provider == "Facebook")
             {
-                var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ??
-                    claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
-                var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ??
-                    claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
-                if (first != null && last != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, first + " " + last));
-                }
-                else if (first != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, first));
-                }
-                else if (last != null)
-                {
-                    filtered.Add(new Claim(JwtClaimTypes.Name, last));
-                }
+                filtered = GetFacebookUserClaims(claims).ToList();
             }
 
-            // email
-            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ??
-               claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-            if (email != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.Email, email));
-            }
+            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
 
             var user = new ApplicationUser
             {
-                UserName = Guid.NewGuid().ToString(),
-                Email = email
+                UserName = email,
+                Email = email,
+                Claims = filtered.Select(x => new IdentityUserClaim<string>()
+                {
+                    ClaimType = x.Type,
+                    ClaimValue = x.Value
+                }).ToList()
             };
-            var identityResult = await _userManager.CreateAsync(user);
-            if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
 
-            if (filtered.Any())
-            {
-                identityResult = await _userManager.AddClaimsAsync(user, filtered);
-                if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
-            }
+            var identityResult = await _userManager.CreateAsync(user, accessToken);
+            if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
 
             identityResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
             if (!identityResult.Succeeded) throw new Exception(identityResult.Errors.First().Description);
@@ -295,6 +202,67 @@ namespace IdentityServer4.Quickstart.UI
             return user;
         }
 
+        private IEnumerable<Claim> GetGoogleUserClaims(IEnumerable<Claim> claims)
+        {
+            var filtered = new List<Claim>();
+
+            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+            if (email != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.Email, email));
+            }
+
+            var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
+            if (first != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.GivenName, first));
+            }
+
+            var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
+            if (last != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.FamilyName, last));
+            }
+
+            var pic = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Picture)?.Value ?? claims.FirstOrDefault(x => x.Type == "urn:google:picture")?.Value;
+            if (pic != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.Picture, pic));
+            }
+
+            return filtered;
+        }
+
+        private IEnumerable<Claim> GetFacebookUserClaims(IEnumerable<Claim> claims)
+        {
+            var filtered = new List<Claim>();
+
+            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+            if (email != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.Email, email));
+            }
+
+            var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
+            if (first != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.GivenName, first));
+            }
+
+            var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
+            if (last != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.FamilyName, last));
+            }
+
+            var pic = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Picture)?.Value ?? claims.FirstOrDefault(x => x.Type == "urn:facebook:picture")?.Value;
+            if (pic != null)
+            {
+                filtered.Add(new Claim(JwtClaimTypes.Picture, pic));
+            }
+
+            return filtered;
+        }
 
         private void ProcessLoginCallbackForOidc(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
         {

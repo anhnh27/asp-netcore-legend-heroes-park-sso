@@ -61,7 +61,8 @@ namespace Legend.Identity.Custom
                                 }).ToList()
                             };
 
-                            await _userManager.CreateAsync(user);
+                            //await _userManager.CreateAsync(user); => save token to password????
+                            await _userManager.CreateAsync(user, context.Password);
                         }
 
                         await _userManager.AddLoginAsync(user, loginInfo);
