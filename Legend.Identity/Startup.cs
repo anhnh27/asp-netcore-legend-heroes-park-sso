@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -24,6 +24,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
+using IdentityModel;
 
 namespace Legend.Identity
 {
@@ -102,18 +103,21 @@ namespace Legend.Identity
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.ClientId = Configuration["Authentication:Google:ClientId"];
                     options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
-                    options.ClaimActions.MapJsonKey("urn:google:picture", "picture", "url");
                     options.SaveTokens = true;
 
-                    options.Events.OnCreatingTicket = ctx =>
+                    options.Events.OnCreatingTicket = context =>
                     {
-                        List<AuthenticationToken> tokens = ctx.Properties.GetTokens().ToList();
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.Email, context.User.GetProperty("email").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.GivenName, context.User.GetProperty("given_name").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.FamilyName, context.User.GetProperty("family_name").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.Picture, context.User.GetProperty("picture").ToString()));
+                        List<AuthenticationToken> tokens = context.Properties.GetTokens().ToList();
                         tokens.Add(new AuthenticationToken()
                         {
                             Name = "TicketCreated",
                             Value = DateTime.UtcNow.ToString()
                         });
-                        ctx.Properties.StoreTokens(tokens);
+                        context.Properties.StoreTokens(tokens);
                         return Task.CompletedTask;
                     };
                 })
@@ -122,24 +126,29 @@ namespace Legend.Identity
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.AppId = Configuration["Authentication:Facebook:AppId"];
                     options.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
-
-                    options.Events.OnCreatingTicket = ctx =>
+                    options.Events.OnCreatingTicket = context =>
                     {
-                        List<AuthenticationToken> tokens = ctx.Properties.GetTokens().ToList();
+                        var profileImg = context.User.GetProperty("picture").GetProperty("data").GetProperty("url").ToString();
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.Email, context.User.GetProperty("email").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.GivenName, context.User.GetProperty("given_name").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.FamilyName, context.User.GetProperty("family_name").ToString()));
+                        context.Identity.AddClaim(new Claim(JwtClaimTypes.Picture, profileImg));
+
+                        List<AuthenticationToken> tokens = context.Properties.GetTokens().ToList();
                         tokens.Add(new AuthenticationToken()
                         {
                             Name = "TicketCreated",
                             Value = DateTime.UtcNow.ToString()
                         });
-                        ctx.Properties.StoreTokens(tokens);
+                        context.Properties.StoreTokens(tokens);
                         return Task.CompletedTask;
                     };
                 });
-                //.AddWeixinAuthentication(options =>
-                //{
-                //    options.ClientId = Configuration["Authentication:WeChat:AppId"];
-                //    options.ClientSecret = Configuration["Authentication:WeChat:AppSecret"];
-                //});
+            //.AddWeixinAuthentication(options =>
+            //{
+            //    options.ClientId = Configuration["Authentication:WeChat:AppId"];
+            //    options.ClientSecret = Configuration["Authentication:WeChat:AppSecret"];
+            //});
 
             #region setup id4
             var builder = services.AddIdentityServer(options =>

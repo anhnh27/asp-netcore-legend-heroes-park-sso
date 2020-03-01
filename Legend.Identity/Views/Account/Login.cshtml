@@ -58,9 +58,36 @@
                     <div class="wrap-login100 p-b-20">
                         <form class="login100-form validate-form" asp-route="Login">
                             <input type="hidden" asp-for="ReturnUrl" />
-                            <span class="login100-form-avatar">
-                                <img src="~/login/images/avatar-01.png" alt="AVATAR">
-                            </span>
+                            @if (Model.VisibleExternalProviders.Any())
+                            {
+                                <div class="social-parent external-providers">
+                                    <ul class="list-inline social-group">
+                                        @foreach (var provider in Model.VisibleExternalProviders)
+                                        {
+                                            <li>
+                                                <a asp-controller="External"
+                                                   asp-action="Challenge"
+                                                   asp-route-provider="@provider.AuthenticationScheme"
+                                                   asp-route-returnUrl="@Model.ReturnUrl">
+                                                    @if (provider.DisplayName == "Google")
+                                                    {
+                                                        <img class="btn-social" src="~/socials/icons8-google-plus-240.png"><span>Login with Google</span>
+                                                    }
+                                                    else if (provider.DisplayName == "Facebook")
+                                                    {
+                                                        <img class="btn-social" src="~/socials/icons8-facebook-240.png"><span>Login with Facebook</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <img class="btn-social" src="~/socials/icons8-weixin-240.png"><span>Login with WeChat</span>
+                                                    }
+                                                </a>
+
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
 
                             <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter username">
                                 <input class="input100" type="text" name="username" asp-for="Username">
@@ -90,39 +117,10 @@
                             </div>
                         </form>
                         <a href="#" class="forgot-pwd-button ">Forgot Password</a>
-                        @if (Model.VisibleExternalProviders.Any())
-                        {
-                            <div class="m-t-35 external-providers">
-                                <div class="panel-body">
-                                    <ul class="list-inline social-group">
-                                        @foreach (var provider in Model.VisibleExternalProviders)
-                                        {
-                                        <li>
-                                            <a
-                                               asp-controller="External"
-                                               asp-action="Challenge"
-                                               asp-route-provider="@provider.AuthenticationScheme"
-                                               asp-route-returnUrl="@Model.ReturnUrl">
-                                                @if (provider.DisplayName == "Google")
-                                                {
-                                                    <img class="btn-social" src="~/socials/icons8-google-plus-240.png">
-                                                }
-                                                else if (provider.DisplayName == "Facebook")
-                                                {
-                                                    <img class="btn-social" src="~/socials/icons8-facebook-240.png">
-                                                }
-                                                else
-                                                {
-                                                    <img class="btn-social" src="~/socials/icons8-weixin-240.png">
-                                                }
-                                            </a>
-                                           
-                                        </li>
-                                        }
-                                    </ul>
-                                </div>
-                            </div>
-                        }
+                        <div class="register-section">
+                            <p class="register-label">Don't have an account?</p>
+                            <a class="register-link" href="#">SIGN UP NOW</a>
+                        </div>
                         @if (!Model.EnableLocalLogin && !Model.VisibleExternalProviders.Any())
                         {
                             <div class="alert alert-warning">

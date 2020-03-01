@@ -142,7 +142,6 @@ namespace IdentityServer4.Quickstart.UI
 
             return Redirect(returnUrl);
         }
-
         private async Task<(string accessToken, ApplicationUser user, string provider, string providerUserId, IEnumerable<Claim> claims)> FindUserFromExternalProviderAsync(AuthenticateResult result)
         {
             var externalUser = result.Principal;
@@ -166,21 +165,10 @@ namespace IdentityServer4.Quickstart.UI
 
             return (accessToken, user, provider, providerUserId, claims);
         }
-
         private async Task<ApplicationUser> AutoProvisionUserAsync(string accessToken, string provider, string providerUserId, IEnumerable<Claim> claims)
         {
-            var filtered = new List<Claim>();
-
-            if (provider == "Google")
-            {
-                filtered = GetGoogleUserClaims(claims).ToList();
-            }
-            else if (provider == "Facebook")
-            {
-                filtered = GetFacebookUserClaims(claims).ToList();
-            }
-
-            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+            var filtered = GetUserClaims(claims).ToList();
+            var email = filtered.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value;
 
             var user = new ApplicationUser
             {
@@ -201,61 +189,29 @@ namespace IdentityServer4.Quickstart.UI
 
             return user;
         }
-
-        private IEnumerable<Claim> GetGoogleUserClaims(IEnumerable<Claim> claims)
+        private IEnumerable<Claim> GetUserClaims(IEnumerable<Claim> claims)
         {
             var filtered = new List<Claim>();
 
-            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value;
             if (email != null)
             {
                 filtered.Add(new Claim(JwtClaimTypes.Email, email));
             }
 
-            var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
+            var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value;
             if (first != null)
             {
                 filtered.Add(new Claim(JwtClaimTypes.GivenName, first));
             }
 
-            var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
+            var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value;
             if (last != null)
             {
                 filtered.Add(new Claim(JwtClaimTypes.FamilyName, last));
             }
 
-            var pic = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Picture)?.Value ?? claims.FirstOrDefault(x => x.Type == "urn:google:picture")?.Value;
-            if (pic != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.Picture, pic));
-            }
-
-            return filtered;
-        }
-
-        private IEnumerable<Claim> GetFacebookUserClaims(IEnumerable<Claim> claims)
-        {
-            var filtered = new List<Claim>();
-
-            var email = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-            if (email != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.Email, email));
-            }
-
-            var first = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.GivenName)?.Value;
-            if (first != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.GivenName, first));
-            }
-
-            var last = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.FamilyName)?.Value ?? claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
-            if (last != null)
-            {
-                filtered.Add(new Claim(JwtClaimTypes.FamilyName, last));
-            }
-
-            var pic = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Picture)?.Value ?? claims.FirstOrDefault(x => x.Type == "urn:facebook:picture")?.Value;
+            var pic = claims.FirstOrDefault(x => x.Type == JwtClaimTypes.Picture)?.Value;
             if (pic != null)
             {
                 filtered.Add(new Claim(JwtClaimTypes.Picture, pic));
