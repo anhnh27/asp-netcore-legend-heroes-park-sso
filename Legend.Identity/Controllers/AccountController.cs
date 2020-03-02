@@ -6,20 +6,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Legend.Identity.Models;
 using Microsoft.AspNetCore.Http;
-using System.Net.Mail;
-using System.Net;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Authorization;
-using System.Web;
 using System.Collections.Generic;
 using System.Linq;
 using Legend.Identity.Helper;
+using System.IO;
 
 namespace Legend.Identity.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AccountController : ControllerBase
+    public class AccountController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -30,6 +28,12 @@ namespace Legend.Identity.Controllers
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
+        }
+
+        public IActionResult Register()
+        {
+            var model = new RegisterViewModel();
+            return View(model);
         }
 
         [HttpPost]
@@ -79,7 +83,59 @@ namespace Legend.Identity.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("Upload")]
+        public IActionResult UploadProfilePhoto(IFormFile file)
+        {
+            try
+            {
+                Guid fileId = Guid.NewGuid();
+                if (!Directory.Exists(Path.Combine("wwwroot/profile-pictures")))
+                {
+                    Directory.CreateDirectory(Path.Combine("wwwroot/profile-pictures"));
+                }
+
+                if (System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId.ToString())))
+                {
+                    System.IO.File.Delete(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()));
+                }
+
+                if (file.Length > 0)
+                {
+                    using (var fileStream = new FileStream(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
+
+                var url = Url.Action("GetPhoto", "Account", new { fileId = fileId.ToString() }, HttpContext.Request.Scheme);
+
+                return Ok(new { Message = "Success", FileUrl = url });
+            }
+            catch (Exception ex) 
+            {
+                return BadRequest(ex);
+            }
+        }
+
         [HttpGet]
+        [AllowAnonymous]
+        [Route("GetPhoto")]
+        public IActionResult GetPhoto(string fileId) 
+        {
+            var fileExist = System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId));
+            if (fileExist)
+            {
+                var image = System.IO.File.OpenRead(Path.Combine("wwwroot/profile-pictures/", fileId));
+                return File(image, "image/jpeg");
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+       [HttpGet]
         [Route("signout")]
         public async Task<IActionResult> SignOut()
         {
@@ -106,7 +162,7 @@ namespace Legend.Identity.Controllers
 
                 if (userEntity == null)
                 {
-                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email});
+                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email });
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(userEntity);

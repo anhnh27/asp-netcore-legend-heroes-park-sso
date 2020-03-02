@@ -119,7 +119,10 @@
                         <a href="#" class="forgot-pwd-button ">Forgot Password</a>
                         <div class="register-section">
                             <p class="register-label">Don't have an account?</p>
-                            <a class="register-link" href="#">SIGN UP NOW</a>
+                            <a class="register-link"
+                               asp-controller="Account"
+                               asp-action="Register"
+                             >SIGN UP NOW</a>
                         </div>
                         @if (!Model.EnableLocalLogin && !Model.VisibleExternalProviders.Any())
                         {

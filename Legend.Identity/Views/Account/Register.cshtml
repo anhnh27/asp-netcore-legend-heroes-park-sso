@@ -1,0 +1,71 @@
+﻿@model Legend.Identity.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <link rel="stylesheet" type="text/css" href="~/login/fonts/font-awesome-4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="~/login/fonts/iconic/css/material-design-iconic-font.css">
+    <link rel="stylesheet" type="text/css" href="~/login/css/main.css">
+    <link rel="stylesheet" type="text/css" href="~/login/css/util.css">
+    <link rel="stylesheet" type="text/css" href="~/register/main.css">
+}
+
+@section scripts {
+    <script src="~/login/js/main.js"></script>
+    <script src="~/register/main.js"></script>
+}
+
+<div class="limiter">
+    <div class="container-login100">
+        <div class="wrap-login100 p-b-20">
+            <form class="login100-form validate-form" asp-action="Register" method="post" enctype="multipart/form-data">
+                <div class="photo-picker m-t-35 m-b-35" data-validate="Select Picture">
+                    <div class="upload-btn-wrapper">
+                        <button class="btn">
+                            <img class="photo-display" id="photo-preview" src="~/register/default-avatar-png-18.png" />
+                            <span class="photo-label">Upload Photo</span>
+                        </button>
+                        <input id="photo" type="file" name="Picture" />
+                    </div>
+                </div>
+            </form>
+            <form class="login100-form validate-form" asp-action="Register" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input id="picture" type="text" name="Picture" asp-for="Picture" hidden />
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter Email">
+                    <input class="input100" type="text" name="Email" asp-for="Email" />
+                    <span class="focus-input100" data-placeholder="Email"></span>
+                </div>
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter FirstName">
+                    <input class="input100" type="text" name="FirstName" asp-for="FirstName" />
+                    <span class="focus-input100" data-placeholder="FirstName"></span>
+                </div>
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter LastName">
+                    <input class="input100" type="text" name="LastName" asp-for="LastName" />
+                    <span class="focus-input100" data-placeholder="LastName"></span>
+                </div>
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter Password">
+                    <input class="input100" type="password" name="Password" asp-for="Password" />
+                    <span class="focus-input100" data-placeholder="Password"></span>
+                </div>
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Confirm Password">
+                    <input class="input100" type="password" name="ConfirmPassword" asp-for="ConfirmPassword" />
+                    <span class="focus-input100" data-placeholder="ConfirmPassword"></span>
+                </div>
+                <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter PhoneNumber">
+                    <input class="input100" type="tel" name="PhoneNumber" asp-for="PhoneNumber" />
+                    <span class="focus-input100" data-placeholder="PhoneNumber"></span>
+                </div>
+                <div class="container-login100-form-btn">
+                    <button class="login100-form-btn" name="button" type="submit">
+                        REGISTER
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
