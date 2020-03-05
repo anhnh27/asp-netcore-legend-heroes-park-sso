@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Legend.Identity.Helper;
 using System.IO;
+using IdentityServer4.Quickstart.UI;
 
 namespace Legend.Identity.Controllers
 {
@@ -30,57 +31,83 @@ namespace Legend.Identity.Controllers
             _emailSender = emailSender;
         }
 
+        [HttpGet]
+        [AllowAnonymous]
         public IActionResult Register()
         {
             var model = new RegisterViewModel();
             return View(model);
         }
 
+
         [HttpPost]
-        public async Task<IActionResult> Register([FromBody]RegisterViewModel model)
+        [AllowAnonymous]
+        public async Task<IActionResult> Register([FromForm]RegisterViewModel model)
         {
-            var user = new ApplicationUser()
+            if (model.Password != model.ConfirmPassword)
             {
-                Email = model.Email,
-                UserName = model.Email
-            };
-
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
-                ClaimType = JwtClaimTypes.Email,
-                ClaimValue = model.Email
-            });
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
-                ClaimType = JwtClaimTypes.GivenName,
-                ClaimValue = model.FirstName
-            });
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
-                ClaimType = JwtClaimTypes.FamilyName,
-                ClaimValue = model.LastName
-            });
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
-                ClaimType = JwtClaimTypes.Picture,
-                ClaimValue = model.Picture
-            });
-            user.Claims.Add(new IdentityUserClaim<string>()
-            {
-                ClaimType = JwtClaimTypes.PhoneNumber,
-                ClaimValue = model.PhoneNumber
-            });
-
-            var response = await _userManager.CreateAsync(user, model.Password);
-            if (response.Succeeded)
-            {
-                return Ok(response);
+                if (model.FromWeb)
+                {
+                    return View("Error", new ErrorViewModel("Password and Confirmation Password are not matched."));
+                }
+                return BadRequest(new { OK = false, Message = "Password and Confirmation Password are not matched." });
             }
             else
             {
-                //TODO: Handle failed request like: Duplicate Username, Email,...
-                return BadRequest(response);
+                var user = new ApplicationUser()
+                {
+                    Email = model.Email,
+                    UserName = model.Email
+                };
+
+                user.Claims.Add(new IdentityUserClaim<string>()
+                {
+                    ClaimType = JwtClaimTypes.Email,
+                    ClaimValue = model.Email
+                });
+                user.Claims.Add(new IdentityUserClaim<string>()
+                {
+                    ClaimType = JwtClaimTypes.GivenName,
+                    ClaimValue = model.FirstName
+                });
+                user.Claims.Add(new IdentityUserClaim<string>()
+                {
+                    ClaimType = JwtClaimTypes.FamilyName,
+                    ClaimValue = model.LastName
+                });
+                if (model.Picture != null)
+                {
+                    user.Claims.Add(new IdentityUserClaim<string>()
+                    {
+                        ClaimType = JwtClaimTypes.Picture,
+                        ClaimValue = model.Picture
+                    });
+                }
+                user.Claims.Add(new IdentityUserClaim<string>()
+                {
+                    ClaimType = JwtClaimTypes.PhoneNumber,
+                    ClaimValue = model.PhoneNumber
+                });
+
+                var response = await _userManager.CreateAsync(user, model.Password);
+                if (response.Succeeded)
+                {
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(response);
+                }
             }
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("RequestResetPasswordView")]
+        public IActionResult RequestResetPasswordView()
+        {
+            var model = new RequestResetPasswordViewModel();
+            return View(model);
         }
 
         [HttpPost]
@@ -162,7 +189,7 @@ namespace Legend.Identity.Controllers
 
                 if (userEntity == null)
                 {
-                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email });
+                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email, AccountExist = false });
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(userEntity);
@@ -173,7 +200,7 @@ namespace Legend.Identity.Controllers
 
                 await _emailSender.SendEmailAsync(email, subject, body);
 
-                return Ok(new { Ok = true, Message = "An email has been sent to your email. Please check your email and follow instruction to reset your password. The email might be in your spam folder." });
+                return Ok(new { Ok = true, Message = "An email has been sent to your email. Please check your email and follow instruction to reset your password. The email might be in your spam folder.", AccountExist = true });
             }
             catch (Exception ex)
             {
@@ -224,7 +251,7 @@ namespace Legend.Identity.Controllers
 
         [HttpPost]
         [Route("changepassword")]
-        public async Task<IActionResult> ChangePassword([FromBody]ResetPasswordModel model)
+        public async Task<IActionResult> ChangePassword([FromBody]ResetPasswordViewModel model)
         {
             try
             {

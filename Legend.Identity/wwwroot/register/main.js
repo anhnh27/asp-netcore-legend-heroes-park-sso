@@ -6,8 +6,8 @@
         formData.append('file', $('#photo')[0].files[0]);
     }
 
-    var URL = "http://localhost:5000/api/Account/Upload";
-
+    var URL = ApplicationUrl + "/api/Account/Upload";
+    
     $.ajax(
         {
             url: URL,

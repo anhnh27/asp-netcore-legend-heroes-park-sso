@@ -20,7 +20,7 @@
 <div class="limiter">
     <div class="container-login100">
         <div class="wrap-login100 p-b-20">
-            <form class="login100-form validate-form" asp-action="Register" method="post" enctype="multipart/form-data">
+            <form class="login100-form validate-form">
                 <div class="photo-picker m-t-35 m-b-35" data-validate="Select Picture">
                     <div class="upload-btn-wrapper">
                         <button class="btn">
@@ -31,9 +31,10 @@
                     </div>
                 </div>
             </form>
-            <form class="login100-form validate-form" asp-action="Register" method="post" enctype="multipart/form-data">
+            <form class="login100-form validate-form" asp-action="Register" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input id="picture" type="text" name="Picture" asp-for="Picture" hidden />
+                <input type="text" value="true" name="FromWeb" asp-for="FromWeb" hidden />
                 <div class="wrap-input100 validate-input m-t-35 m-b-35" data-validate="Enter Email">
                     <input class="input100" type="text" name="Email" asp-for="Email" />
                     <span class="focus-input100" data-placeholder="Email"></span>
