@@ -189,6 +189,14 @@ namespace Legend.Identity
             services.AddTransient<IProfileService, CustomProfileService>();
             services.AddTransient<IResourceOwnerPasswordValidator, CustomResourceOwnerPasswordValidator>();
             #endregion
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+            });
         }
 
         public void Configure(IApplicationBuilder app)
@@ -205,6 +213,8 @@ namespace Legend.Identity
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
             }
+
+            app.UseCors("CorsPolicy");
 
             app.UseStaticFiles();
 
