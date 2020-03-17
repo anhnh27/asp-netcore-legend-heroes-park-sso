@@ -12,6 +12,8 @@ namespace Legend.Identity.Helper
     {
         public static ClaimsPrincipal GetClaims(JObject payload)
         {
+            /** For WeChat user we can not get email, first name, last name **/
+
             if (payload == null)
                 return null;
             var ci = new ClaimsIdentity();
@@ -19,6 +21,11 @@ namespace Legend.Identity.Helper
             if (!string.IsNullOrEmpty(email))
             {
                 ci.AddClaim(new Claim(JwtClaimTypes.Email, email, ClaimValueTypes.String));
+            }
+            var nickName = payload.Value<string>("nickname");
+            if (!string.IsNullOrEmpty(nickName))
+            {
+                ci.AddClaim(new Claim(JwtClaimTypes.NickName, nickName, ClaimValueTypes.String));
             }
             var firstName = payload.Value<string>("given_name");
             if (!string.IsNullOrEmpty(firstName))
@@ -30,7 +37,7 @@ namespace Legend.Identity.Helper
             {
                 ci.AddClaim(new Claim(JwtClaimTypes.FamilyName, lastName, ClaimValueTypes.String));
             }
-            var pic = payload.Value<string>("picture");
+            var pic = payload.Value<string>("picture") ?? payload.Value<string>("headimgurl");
             if (!string.IsNullOrEmpty(pic))
             {
                 var p = pic.Split('?')[0];
@@ -39,16 +46,25 @@ namespace Legend.Identity.Helper
 
             return new ClaimsPrincipal(ci);
         }
-        public static async Task<JObject> GetWechatUser(string idToken)
+        public static async Task<JObject> GetWechatUser(string appId, string appSecret, string code)
         {
-            var userInformationEndpoint = string.Format("https://www.Wechatapis.com/oauth2/v3/tokeninfo?id_token={0}", idToken);
-            var request = new HttpRequestMessage(HttpMethod.Get, userInformationEndpoint);
-            var response = await new HttpClient().SendAsync(request);
-            if (response.IsSuccessStatusCode)
+            var wxAccessTokenEndpoint = string.Format("https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&code={2}&grant_type=authorization_code", appId, appSecret, code);
+            var accessTokenRequest = new HttpRequestMessage(HttpMethod.Get, wxAccessTokenEndpoint);
+            var accessTokenResponse = await new HttpClient().SendAsync(accessTokenRequest);
+            if (accessTokenResponse.IsSuccessStatusCode)
             {
-                var payload = JObject.Parse(await response.Content.ReadAsStringAsync());
-                return payload;
+                var accessTokenPayload = JObject.Parse(await accessTokenResponse.Content.ReadAsStringAsync());
+                var userInfoEnpoint = string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", accessTokenPayload.Value<string>("access_token"), accessTokenPayload.Value<string>("openid"));
+                var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, userInfoEnpoint);
+                var userInfoResponse = await new HttpClient().SendAsync(userInfoRequest);
+                if (userInfoResponse.IsSuccessStatusCode)
+                {
+                    var userInfoPayload = JObject.Parse(await userInfoResponse.Content.ReadAsStringAsync());
+                    return userInfoPayload;
+                }
+                return null;
             }
+
             return null;
         }
         /// <summary>
@@ -60,7 +76,7 @@ namespace Legend.Identity.Helper
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            return user.Value<string>("sub");
+            return user.Value<string>("sub") ?? user.Value<string>("unionid");
         }
         /// <summary>
         /// Gets the user's email.
@@ -71,7 +87,7 @@ namespace Legend.Identity.Helper
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            return user.Value<string>("email");
+            return user.Value<string>("email") ?? string.Format("{0}.wechatuser@example.com", user.Value<string>("unionid"));
         }
     }
 }
