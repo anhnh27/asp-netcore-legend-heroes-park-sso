@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.AspNetIdentity;
@@ -57,19 +56,11 @@ namespace Legend.Identity.Custom
                                 Id = userId,
                                 Email = extenalEmail,
                                 UserName = extenalEmail,
-                                Claims = loginInfo.Principal.Claims.Select(x => new IdentityUserClaim<string>()
-                                {
-                                    UserId = userId,
-                                    ClaimType = x.Type,
-                                    ClaimValue = x.Value
-                                }).ToList()
                             };
 
-                            var createResult = _userManager.CreateAsync(user, context.Password).Result;
-                            if (createResult.Succeeded)
-                            {
-                                await _userManager.AddLoginAsync(user, loginInfo);
-                            }
+                            await _userManager.CreateAsync(user, context.Password);
+                            await _userManager.AddClaimsAsync(user, loginInfo.Principal.Claims);
+                            await _userManager.AddLoginAsync(user, loginInfo);
                         }
                     }
                 }
@@ -92,7 +83,7 @@ namespace Legend.Identity.Custom
             await base.ValidateAsync(context);
         }
 
-        public async Task<ExternalLoginInfo> CreateExternalLogin(string provider, string token)
+        public async Task<ExternalLoginInfo> CreateExternalLogin(string provider, string token, string appId = "wx8f876bc75a295364", string appSecret = "3f6bc39616d253b0edc2a5fccb8e0b6b")
         {
             switch (provider)
             {
@@ -114,7 +105,7 @@ namespace Legend.Identity.Custom
                     }
                 case ExternalProvider.Wechat:
                     {
-                        var payload = await WechatHelper.GetWechatUser(token);
+                        var payload = await WechatHelper.GetWechatUser(appId, appSecret, token);
                         var cp = WechatHelper.GetClaims(payload);
                         if (cp == null)
                             return null;
