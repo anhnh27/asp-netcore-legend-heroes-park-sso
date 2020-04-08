@@ -27,7 +27,7 @@ namespace Legend.Identity.Helper
             var client = new SmtpClient(host, port)
             {
                 Credentials = new NetworkCredential(userName, password),
-                EnableSsl = enableSSL
+                EnableSsl = enableSSL,
             };
             return client.SendMailAsync(
                 new MailMessage(userName, email, subject, htmlMessage) { IsBodyHtml = true }

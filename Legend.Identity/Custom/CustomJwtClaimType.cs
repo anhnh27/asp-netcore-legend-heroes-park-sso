@@ -3,6 +3,5 @@
     public static class CustomJwtClaimType
     {
         /// <summary>Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can be present, with the names being separated by space characters.</summary>
-        public const string ParkSeq = "park_seq";
     }
 }

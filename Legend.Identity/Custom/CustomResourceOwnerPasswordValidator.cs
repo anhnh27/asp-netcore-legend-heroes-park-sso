@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.AspNetIdentity;
@@ -50,22 +51,26 @@ namespace Legend.Identity.Custom
                         user = await _userManager.FindByEmailAsync(extenalEmail);
                         if (user == null)
                         {
+                            var userId = Guid.NewGuid().ToString();
                             user = new ApplicationUser()
                             {
+                                Id = userId,
                                 Email = extenalEmail,
                                 UserName = extenalEmail,
                                 Claims = loginInfo.Principal.Claims.Select(x => new IdentityUserClaim<string>()
                                 {
+                                    UserId = userId,
                                     ClaimType = x.Type,
                                     ClaimValue = x.Value
                                 }).ToList()
                             };
 
-                            //await _userManager.CreateAsync(user); => save token to password????
-                            await _userManager.CreateAsync(user, context.Password);
+                            var createResult = _userManager.CreateAsync(user, context.Password).Result;
+                            if (createResult.Succeeded)
+                            {
+                                await _userManager.AddLoginAsync(user, loginInfo);
+                            }
                         }
-
-                        await _userManager.AddLoginAsync(user, loginInfo);
                     }
                 }
 

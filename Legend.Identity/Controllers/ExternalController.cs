@@ -170,12 +170,16 @@ namespace IdentityServer4.Quickstart.UI
             var filtered = GetUserClaims(claims).ToList();
             var email = filtered.FirstOrDefault(x => x.Type == JwtClaimTypes.Email)?.Value;
 
+            var userId = Guid.NewGuid().ToString();
+
             var user = new ApplicationUser
             {
+                Id = userId,
                 UserName = email,
                 Email = email,
                 Claims = filtered.Select(x => new IdentityUserClaim<string>()
                 {
+                    UserId = userId,
                     ClaimType = x.Type,
                     ClaimValue = x.Value
                 }).ToList()

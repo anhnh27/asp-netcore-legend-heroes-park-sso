@@ -7,6 +7,8 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
+            Guid g = Guid.NewGuid();
+
             var c = GrantTypes.Code;
 
             var x = new Secret("3d73bc46-d313-4155-8074-8cb1c13ada03".Sha256()).Value;

@@ -91,7 +91,7 @@ namespace Legend.Identity
                 #region Password Require Options
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = true;
-                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireLowercase = true;
                 options.Password.RequireUppercase = true;
                 #endregion
