@@ -83,7 +83,7 @@ namespace Legend.Identity.Custom
             await base.ValidateAsync(context);
         }
 
-        public async Task<ExternalLoginInfo> CreateExternalLogin(string provider, string token, string appId = "wx8f876bc75a295364", string appSecret = "3f6bc39616d253b0edc2a5fccb8e0b6b")
+        public async Task<ExternalLoginInfo> CreateExternalLogin(string provider, string token)
         {
             switch (provider)
             {
@@ -105,7 +105,8 @@ namespace Legend.Identity.Custom
                     }
                 case ExternalProvider.Wechat:
                     {
-                        var payload = await WechatHelper.GetWechatUser(appId, appSecret, token);
+                        string[] variables = token.Split(":");
+                        var payload = await WechatHelper.GetWechatUser(variables[0], variables[1]);
                         var cp = WechatHelper.GetClaims(payload);
                         if (cp == null)
                             return null;

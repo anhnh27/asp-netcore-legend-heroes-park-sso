@@ -399,7 +399,7 @@ namespace Legend.Identity.Controllers
         [Route("UniversalLink")]
         public IActionResult UniversalLink(string email, string code)
         {
-            return Redirect(string.Format("legendheroespark://resetpassword/{0}:{1}", email, code));
+            return Redirect(string.Format("legendheroespark://resetpassword/{0}:{1}", email, WebUtility.UrlEncode(code)));
         }
 
         [HttpPost]
@@ -418,7 +418,7 @@ namespace Legend.Identity.Controllers
                 var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
                 var subject = "Legend Heroes Park - Reset Password";
 
-                if (!result.Succeeded)
+                if (result.Succeeded)
                 {
                     var body = string.Format("Your password has been reset.");
                     await _emailSender.SendEmailAsync(model.Email, subject, body);

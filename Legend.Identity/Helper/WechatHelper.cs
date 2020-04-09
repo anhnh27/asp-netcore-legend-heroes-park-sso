@@ -17,11 +17,6 @@ namespace Legend.Identity.Helper
             if (payload == null)
                 return null;
             var ci = new ClaimsIdentity();
-            var email = GetEmail(payload);
-            if (!string.IsNullOrEmpty(email))
-            {
-                ci.AddClaim(new Claim(JwtClaimTypes.Email, email, ClaimValueTypes.String));
-            }
             var nickName = payload.Value<string>("nickname");
             if (!string.IsNullOrEmpty(nickName))
             {
@@ -46,26 +41,18 @@ namespace Legend.Identity.Helper
 
             return new ClaimsPrincipal(ci);
         }
-        public static async Task<JObject> GetWechatUser(string appId, string appSecret, string code)
+        public static async Task<JObject> GetWechatUser(string token, string openId)
         {
-            var wxAccessTokenEndpoint = string.Format("https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&code={2}&grant_type=authorization_code", appId, appSecret, code);
-            var accessTokenRequest = new HttpRequestMessage(HttpMethod.Get, wxAccessTokenEndpoint);
-            var accessTokenResponse = await new HttpClient().SendAsync(accessTokenRequest);
-            if (accessTokenResponse.IsSuccessStatusCode)
+            var userInfoEnpoint = string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", token, openId);
+            var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, userInfoEnpoint);
+            var userInfoResponse = await new HttpClient().SendAsync(userInfoRequest);
+            if (userInfoResponse.IsSuccessStatusCode)
             {
-                var accessTokenPayload = JObject.Parse(await accessTokenResponse.Content.ReadAsStringAsync());
-                var userInfoEnpoint = string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", accessTokenPayload.Value<string>("access_token"), accessTokenPayload.Value<string>("openid"));
-                var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, userInfoEnpoint);
-                var userInfoResponse = await new HttpClient().SendAsync(userInfoRequest);
-                if (userInfoResponse.IsSuccessStatusCode)
-                {
-                    var userInfoPayload = JObject.Parse(await userInfoResponse.Content.ReadAsStringAsync());
-                    return userInfoPayload;
-                }
-                return null;
+                var userInfoPayload = JObject.Parse(await userInfoResponse.Content.ReadAsStringAsync());
+                return userInfoPayload;
             }
-
             return null;
+
         }
         /// <summary>
         /// Gets the Wechat user ID.
@@ -77,17 +64,6 @@ namespace Legend.Identity.Helper
                 throw new ArgumentNullException(nameof(user));
             }
             return user.Value<string>("sub") ?? user.Value<string>("unionid");
-        }
-        /// <summary>
-        /// Gets the user's email.
-        /// </summary>
-        public static string GetEmail(JObject user)
-        {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            return user.Value<string>("email") ?? string.Format("{0}.wechatuser@example.com", user.Value<string>("unionid"));
         }
     }
 }
