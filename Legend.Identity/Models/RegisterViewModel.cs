@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Legend.Identity.Models
 {
     public class RegisterViewModel
     {
+        public Guid Id { get; set; }
         [Required]
         [DataType(DataType.EmailAddress)]
         public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        [Required]
         public string Name { get; set; }
         [Required]
         [DataType(DataType.Password)]
@@ -20,10 +21,13 @@ namespace Legend.Identity.Models
         public string Picture { get; set; }
         [Required]
         [DataType(DataType.PhoneNumber)]
+        public int? PhoneCode { get; set; }
         public string PhoneNumber { get; set; }
-        public string Nationality { get; set; }
+        public int? Nationality { get; set; }
         public string BirthDay { get; set; }
-        public string Gender { get; set; }
+        public int? Gender { get; set; }
         public bool FromWeb { get; set; }
+        public List<Country> Countries { get; set; }
+        public List<Gender> Genders { get; set; }
     }
 }

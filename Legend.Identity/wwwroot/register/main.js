@@ -35,6 +35,7 @@ function readURL(input) {
 }
 
 $(document).ready(function () {
+    $('#birthday').datepicker();
     $('#photo').change(function () {
         readURL(this);
         uploadFile(this);

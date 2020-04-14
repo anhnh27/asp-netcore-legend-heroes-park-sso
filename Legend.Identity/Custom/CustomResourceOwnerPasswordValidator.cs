@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.AspNetIdentity;
@@ -36,7 +37,6 @@ namespace Legend.Identity.Custom
                 if (loginInfo == null)
                 {
                     context.Result = new GrantValidationResult(TokenRequestErrors.InvalidGrant);
-
                     return;
                 }
 
@@ -45,24 +45,45 @@ namespace Legend.Identity.Custom
                 if (user == null)
                 {
                     var extenalEmail = loginInfo.Principal.FindFirst(JwtClaimTypes.Email)?.Value;
+                    var userNameSuffix = _userManager.Users.Where(u => u.Id != null).Count().ToString().PadLeft(7, '0');
+                    var userName = string.Format("{0}{1}", loginInfo.LoginProvider.ToLower(), userNameSuffix);
+                    var userId = Guid.NewGuid().ToString();
                     if (!string.IsNullOrEmpty(extenalEmail))
                     {
-                        user = await _userManager.FindByEmailAsync(extenalEmail);
-                        if (user == null)
+                        user = new ApplicationUser()
                         {
-                            var userId = Guid.NewGuid().ToString();
-                            user = new ApplicationUser()
-                            {
-                                Id = userId,
-                                Email = extenalEmail,
-                                UserName = extenalEmail,
-                            };
+                            Id = userId,
+                            Email = extenalEmail,
+                            UserName = userName,
+                        };
 
-                            await _userManager.CreateAsync(user, context.Password);
-                            await _userManager.AddClaimsAsync(user, loginInfo.Principal.Claims);
-                            await _userManager.AddLoginAsync(user, loginInfo);
-                        }
+                        user.Claims.Add(new IdentityUserClaim<string>()
+                        {
+                            ClaimType = JwtClaimTypes.Name,
+                            ClaimValue = userName
+                        });
+                        user.Claims.Add(new IdentityUserClaim<string>()
+                        {
+                            ClaimType = JwtClaimTypes.Email,
+                            ClaimValue = extenalEmail
+                        });
                     }
+                    else
+                    {
+                        user = new ApplicationUser()
+                        {
+                            Id = userId,
+                            UserName = userName,
+                        };
+                        user.Claims.Add(new IdentityUserClaim<string>()
+                        {
+                            ClaimType = JwtClaimTypes.Name,
+                            ClaimValue = userName
+                        });
+                    }
+                    var createResult = await _userManager.CreateAsync(user, context.Password);
+                    var addClaimsResult = await _userManager.AddClaimsAsync(user, loginInfo.Principal.Claims);
+                    var addLoginResult = await _userManager.AddLoginAsync(user, loginInfo);
                 }
 
                 if (user != null)
@@ -78,6 +99,13 @@ namespace Legend.Identity.Custom
                     return;
                 }
 
+            }
+
+            //TO ALLOW LOGIN BOTH USERNAME & EMAIL
+            if (RegexUtilities.IsValidEmail(context.UserName))
+            {
+                var user = await _userManager.FindByEmailAsync(context.UserName);
+                context.UserName = user.UserName;
             }
 
             await base.ValidateAsync(context);

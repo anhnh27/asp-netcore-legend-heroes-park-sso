@@ -86,7 +86,7 @@ namespace Legend.Identity
             {
                 options.SignIn.RequireConfirmedEmail = false;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
-                options.User.RequireUniqueEmail = true;
+                options.User.RequireUniqueEmail = false;
 
                 #region Password Require Options
                 options.Password.RequiredLength = 8;

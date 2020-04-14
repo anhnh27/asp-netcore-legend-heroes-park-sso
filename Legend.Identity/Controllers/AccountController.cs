@@ -10,10 +10,13 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Linq;
-using Legend.Identity.Helper;
 using System.IO;
 using IdentityServer4.Quickstart.UI;
 using System.Net;
+using Microsoft.AspNetCore.Hosting;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Legend.Identity.Custom;
 
 namespace Legend.Identity.Controllers
 {
@@ -24,12 +27,14 @@ namespace Legend.Identity.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
+        private readonly IWebHostEnvironment _appEnvironment;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailSender emailSender)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IEmailSender emailSender, IWebHostEnvironment appEnvironment)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
+            _appEnvironment = appEnvironment;
         }
 
         [HttpGet]
@@ -37,9 +42,36 @@ namespace Legend.Identity.Controllers
         public IActionResult Register()
         {
             var model = new RegisterViewModel();
+            var genders = new List<Gender>()
+            {
+                new Gender()
+                {
+                    Value = 0,
+                    Label = "Male"
+                },
+                new Gender()
+                {
+                    Value = 1,
+                    Label = "Female"
+                }
+            };
+            var countries = new List<Country>();
+
+            var jsonFile = System.IO.File.ReadAllText(Path.Combine(_appEnvironment.WebRootPath, "Countries.json"));
+            var countriesJ = JsonConvert.DeserializeObject(jsonFile) as JArray;
+
+            foreach (var country in countriesJ)
+            {
+                countries.Add(country.ToObject<Country>());
+            }
+            model.Countries = countries;
+            model.PhoneCode = countries[0].Value;
+            model.PhoneNumber = $"+{countries[0].Value}";
+            model.Nationality = countries[0].Value;
+            model.Gender = genders[0].Value;
+            model.Genders = genders;
             return View(model);
         }
-
 
         [HttpPost]
         [AllowAnonymous]
@@ -55,35 +87,22 @@ namespace Legend.Identity.Controllers
             }
             else
             {
+                var userExisted = await _userManager.FindByNameAsync(model.Name);
+                if (userExisted != null)
+                {
+                    if (model.FromWeb)
+                    {
+                        return View("Error", new ErrorViewModel("Name already taken. Please try other name."));
+                    }
+                    return BadRequest(new { OK = false, Message = "Name already taken. Please try other name." });
+                }
+
                 var user = new ApplicationUser()
                 {
                     Email = model.Email,
-                    UserName = model.Email
+                    UserName = model.Name,
                 };
-                if (model.Email != null)
-                {
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.Email,
-                        ClaimValue = model.Email
-                    });
-                }
-                if (model.FirstName != null)
-                {
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.GivenName,
-                        ClaimValue = model.FirstName
-                    });
-                }
-                if (model.LastName != null)
-                {
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.FamilyName,
-                        ClaimValue = model.LastName
-                    });
-                }
+
                 if (model.Name != null)
                 {
                     user.Claims.Add(new IdentityUserClaim<string>()
@@ -92,12 +111,20 @@ namespace Legend.Identity.Controllers
                         ClaimValue = model.Name
                     });
                 }
-                else
+                if (model.Email != null)
                 {
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
-                        ClaimType = JwtClaimTypes.Name,
-                        ClaimValue = string.Format("{0} {1}", model.FirstName, model.LastName)
+                        ClaimType = JwtClaimTypes.Email,
+                        ClaimValue = model.Email
+                    });
+                }
+                if (model.PhoneCode != null)
+                {
+                    user.Claims.Add(new IdentityUserClaim<string>()
+                    {
+                        ClaimType = JwtClaimTypesExt.PhoneCode,
+                        ClaimValue = model.PhoneCode.ToString()
                     });
                 }
                 if (model.PhoneNumber != null)
@@ -113,7 +140,15 @@ namespace Legend.Identity.Controllers
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
                         ClaimType = JwtClaimTypes.Locale,
-                        ClaimValue = model.Nationality
+                        ClaimValue = model.Nationality.ToString()
+                    });
+                }
+                if (model.BirthDay != null)
+                {
+                    user.Claims.Add(new IdentityUserClaim<string>()
+                    {
+                        ClaimType = JwtClaimTypes.BirthDate,
+                        ClaimValue = model.BirthDay
                     });
                 }
                 if (model.Gender != null)
@@ -121,15 +156,7 @@ namespace Legend.Identity.Controllers
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
                         ClaimType = JwtClaimTypes.Gender,
-                        ClaimValue = model.Gender
-                    });
-                }
-                if (model.Picture != null)
-                {
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.Picture,
-                        ClaimValue = model.Picture
+                        ClaimValue = model.Gender.ToString()
                     });
                 }
                 var response = await _userManager.CreateAsync(user, model.Password);
@@ -144,139 +171,23 @@ namespace Legend.Identity.Controllers
             }
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        [Route("RequestResetPasswordView")]
-        public IActionResult RequestResetPasswordView()
-        {
-            var model = new RequestResetPasswordViewModel();
-            return View(model);
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        [Route("ResetPassword")]
-        public IActionResult ResetPassword(string email, string code)
-        {
-            var model = new ResetPasswordRequestModel();
-            model.Email = email;
-            model.Code = code;
-            return View(model);
-        }
-
-        [HttpPost]
-        [Route("Upload")]
-        public IActionResult UploadProfilePhoto(IFormFile file)
-        {
-            try
-            {
-                Guid fileId = Guid.NewGuid();
-                if (!Directory.Exists(Path.Combine("wwwroot/profile-pictures")))
-                {
-                    Directory.CreateDirectory(Path.Combine("wwwroot/profile-pictures"));
-                }
-
-                if (System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId.ToString())))
-                {
-                    System.IO.File.Delete(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()));
-                }
-
-                if (file.Length > 0)
-                {
-                    using (var fileStream = new FileStream(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()), FileMode.Create))
-                    {
-                        file.CopyTo(fileStream);
-                    }
-                }
-
-                var url = Url.Action("GetPhoto", "Account", new { fileId = fileId.ToString() }, HttpContext.Request.Scheme);
-
-                return Ok(new { Message = "Success", FileUrl = url });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex);
-            }
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        [Route("GetPhoto")]
-        public IActionResult GetPhoto(string fileId)
-        {
-            var fileExist = System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId));
-            if (fileExist)
-            {
-                var image = System.IO.File.OpenRead(Path.Combine("wwwroot/profile-pictures/", fileId));
-                return File(image, "image/jpeg");
-            }
-            else
-            {
-                return NotFound();
-            }
-        }
-
         [HttpPost]
         [Route("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile(RegisterViewModel model)
         {
             try
             {
-                var user = await _userManager.FindByIdAsync(model.Email);
-                if (model.Email != null)
+                var user = await _userManager.FindByNameAsync(model.Name);
+                if (model.PhoneCode != null)
                 {
-                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.Email))
+                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypesExt.PhoneCode))
                     {
-                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.Email));
+                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypesExt.PhoneCode));
                     }
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
-                        ClaimType = JwtClaimTypes.Email,
-                        ClaimValue = model.Email
-                    });
-                }
-                if (model.FirstName != null)
-                {
-                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.GivenName))
-                    {
-                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.GivenName));
-                    }
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.GivenName,
-                        ClaimValue = model.FirstName
-                    });
-                }
-                if (model.LastName != null)
-                {
-                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.FamilyName))
-                    {
-                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.FamilyName));
-                    }
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.FamilyName,
-                        ClaimValue = model.LastName
-                    });
-                }
-                if (model.Name != null)
-                {
-                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.Name))
-                    {
-                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.Name));
-                    }
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.Name,
-                        ClaimValue = model.Name
-                    });
-                }
-                else
-                {
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.Name,
-                        ClaimValue = string.Format("{0} {1}", model.FirstName, model.LastName)
+                        ClaimType = JwtClaimTypesExt.PhoneCode,
+                        ClaimValue = model.PhoneCode.ToString()
                     });
                 }
                 if (model.PhoneNumber != null)
@@ -300,7 +211,19 @@ namespace Legend.Identity.Controllers
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
                         ClaimType = JwtClaimTypes.Locale,
-                        ClaimValue = model.Nationality
+                        ClaimValue = model.Nationality.ToString()
+                    });
+                }
+                if (model.BirthDay != null)
+                {
+                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.BirthDate))
+                    {
+                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.BirthDate));
+                    }
+                    user.Claims.Add(new IdentityUserClaim<string>()
+                    {
+                        ClaimType = JwtClaimTypes.BirthDate,
+                        ClaimValue = model.BirthDay
                     });
                 }
                 if (model.Gender != null)
@@ -312,25 +235,13 @@ namespace Legend.Identity.Controllers
                     user.Claims.Add(new IdentityUserClaim<string>()
                     {
                         ClaimType = JwtClaimTypes.Gender,
-                        ClaimValue = model.Gender
-                    });
-                }
-                if (model.Picture != null)
-                {
-                    if (user.Claims.Any(x => x.ClaimType == JwtClaimTypes.Picture))
-                    {
-                        user.Claims.Remove(user.Claims.FirstOrDefault(x => x.ClaimType == JwtClaimTypes.Picture));
-                    }
-                    user.Claims.Add(new IdentityUserClaim<string>()
-                    {
-                        ClaimType = JwtClaimTypes.Picture,
-                        ClaimValue = model.Picture
+                        ClaimValue = model.Gender.ToString()
                     });
                 }
 
                 await _userManager.UpdateAsync(user);
 
-                return Ok();
+                return Ok(new { Ok = true, Message = "Success" });
             }
             catch (Exception ex)
             {
@@ -365,7 +276,7 @@ namespace Legend.Identity.Controllers
 
                 if (userEntity == null)
                 {
-                    return Ok(new { Ok = true, Message = "Could not find user with email: " + email, AccountExist = false });
+                    return Ok(new { Ok = false, Message = "Could not find user with email: " + email, AccountExist = false });
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(userEntity);
@@ -392,6 +303,26 @@ namespace Legend.Identity.Controllers
                 var result = StatusCode(StatusCodes.Status500InternalServerError, new { Ok = false, ex.Message });
                 return result;
             }
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("RequestResetPasswordView")]
+        public IActionResult RequestResetPasswordView()
+        {
+            var model = new RequestResetPasswordViewModel();
+            return View(model);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("ResetPassword")]
+        public IActionResult ResetPassword(string email, string code)
+        {
+            var model = new ResetPasswordRequestModel();
+            model.Email = email;
+            model.Code = code;
+            return View(model);
         }
 
         [HttpGet]
@@ -478,58 +409,56 @@ namespace Legend.Identity.Controllers
             }
         }
 
-        //[HttpPost]
-        //[Route("ChangePassword")]
-        //public async Task<IActionResult> ChangePassword([FromBody]ResetPasswordViewModel model)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid)
-        //        {
-        //            return NoContent();
-        //        }
+        [HttpPost]
+        [Route("Upload")]
+        public IActionResult UploadProfilePhoto(IFormFile file)
+        {
+            try
+            {
+                Guid fileId = Guid.NewGuid();
+                if (!Directory.Exists(Path.Combine("wwwroot/profile-pictures")))
+                {
+                    Directory.CreateDirectory(Path.Combine("wwwroot/profile-pictures"));
+                }
 
-        //        var user = await _userManager.FindByEmailAsync(model.Email);
-        //        if (user == null)
-        //        {
-        //            return Ok(new { Ok = true, Message = "Could not find user with email: " + model.Email });
-        //        }
+                if (System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId.ToString())))
+                {
+                    System.IO.File.Delete(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()));
+                }
 
-        //        var pwdErrors = new List<string>();
-        //        var validators = _userManager.PasswordValidators;
-        //        foreach (var item in validators)
-        //        {
-        //            var isValid = await item.ValidateAsync(_userManager, user, model.NewPassword);
+                if (file.Length > 0)
+                {
+                    using (var fileStream = new FileStream(Path.Combine("wwwroot/profile-pictures/", fileId.ToString()), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                }
 
-        //            if (!isValid.Succeeded)
-        //            {
-        //                foreach (var error in isValid.Errors)
-        //                {
-        //                    pwdErrors.Add(error.Description);
-        //                }
-        //            }
-        //        }
+                var url = Url.Action("GetPhoto", "Account", new { fileId = fileId.ToString() }, HttpContext.Request.Scheme);
 
-        //        if (pwdErrors.Count > 0)
-        //        {
-        //            return Ok(new { Ok = false, Message = "Password is not valid. Message: " + string.Join(", ", pwdErrors) });
-        //        }
+                return Ok(new { Message = "Success", FileUrl = url });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
 
-        //        await _userManager.RemovePasswordAsync(user);
-        //        var result = await _userManager.AddPasswordAsync(user, model.NewPassword);
-
-        //        if (!result.Succeeded)
-        //        {
-        //            return Ok(new { Ok = false, Message = "Update password failed. Error: " + string.Join(", ", result.Errors.Select(e => e.Description).ToArray()) });
-        //        }
-
-        //        return Ok(new { Ok = true, Message = "Your password has been changes." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var result = StatusCode(StatusCodes.Status500InternalServerError, new { Ok = false, ex.Message });
-        //        return result;
-        //    }
-        //}
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("GetPhoto")]
+        public IActionResult GetPhoto(string fileId)
+        {
+            var fileExist = System.IO.File.Exists(Path.Combine("wwwroot/profile-pictures/", fileId));
+            if (fileExist)
+            {
+                var image = System.IO.File.OpenRead(Path.Combine("wwwroot/profile-pictures/", fileId));
+                return File(image, "image/jpeg");
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
     }
 }
